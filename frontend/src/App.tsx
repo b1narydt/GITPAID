@@ -30,7 +30,8 @@ import './App.scss'
 import { IdentityCard } from 'metanet-identity-react'
 import { MeterContract } from './contracts/Meter'
 import meterContractJson from '../artifacts/Meter.json'
-import { SHIPBroadcaster, Transaction } from '@bsv/sdk'
+import { SHIPBroadcaster, LookupResolver, Transaction } from '@bsv/sdk'
+import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
 MeterContract.loadArtifact(meterContractJson)
 
 // These are some basic styling rules for the React application.
@@ -134,9 +135,27 @@ const App: React.FC = () => {
   // Load meters
   useAsyncEffect(async () => {
     const pubKeyResult = await getPublicKey({ identityKey: true })
-    setMeters([
-      { value: 42, creatorIdentityKey: pubKeyResult, token: {} as Token }
-    ])
+    const resolver = new LookupResolver()
+    const lookupResult = await resolver.query({
+      service: 'ls_meter',
+      query: 'findAll'
+    })
+    if (lookupResult.type !== 'output-list') {
+      throw new Error('Wrong result type!')
+    }
+    const parsedResults: Meter[] = []
+    for (const result of lookupResult.outputs) {
+      const tx = Transaction.fromBEEF(result.beef)
+      const script = tx.outputs[result.outputIndex].lockingScript.toHex()
+      const meter = MeterContract.fromLockingScript(script) as MeterContract
+      const convertedToken = toEnvelopeFromBEEF(result.beef)
+      parsedResults.push({
+        value: Number(meter.count),
+        creatorIdentityKey: pubKeyResult,
+        token: convertedToken as unknown as Token
+      })
+    }
+    setMeters(parsedResults)
     setMetersLoading(false)
   }, [])
 
