@@ -9,6 +9,7 @@ export interface MeterRecord {
   txid: string
   outputIndex: number
   value: number
+  creatorIdentityKey: string
   createdAt: Date
 }
 

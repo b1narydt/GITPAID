@@ -1,9 +1,11 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
-import { Transaction } from '@bsv/sdk'
+import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
 import { getDocumentation } from '../utils/getDocumentation.js'
 import meterContractJson from '../../artifacts/Meter.json'
 import { MeterContract } from 'src/contracts/Meter.js'
 MeterContract.loadArtifact(meterContractJson)
+
+const anyoneWallet = new ProtoWallet('anyone')
 
 /**
  *  Note: The PushDrop package is used to decode BRC-48 style Pay-to-Push-Drop tokens.
@@ -26,9 +28,22 @@ export class MeterTopicManager implements TopicManager {
           // Parse sCrypt locking script
           const script = output.lockingScript.toHex()
           // Ensure Meter can be constructed from script
-          const meter = MeterContract.fromLockingScript(script)
+          const meter = MeterContract.fromLockingScript(script) as MeterContract
           console.log(meter)
           // This is where other overlay-level validation rules would be enforced
+          // Verify creator signature came from creator public key
+          const verifyResult = await anyoneWallet.verifySignature({
+            protocolID: [0, 'meter'],
+            keyID: '1',
+            counterparty: meter.creatorIdentityKey,
+            data: [1],
+            signature: Utils.toArray(meter.creatorSignature, 'hex')
+          })
+          console.log(verifyResult)
+          if (verifyResult.valid !== true) {
+            throw new Error('Signature invalid')
+          }
+
           outputsToAdmit.push(i)
         } catch (error) {
           console.error('Error processing output:', error)

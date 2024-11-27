@@ -19,12 +19,13 @@ export class MeterStorage {
    * @param {number} outputIndex index of the UTXO
    * @param {string} value - meter value to save
    */
-  async storeRecord(txid: string, outputIndex: number, value: number): Promise<void> {
+  async storeRecord(txid: string, outputIndex: number, value: number, creatorIdentityKey: string): Promise<void> {
     // Insert new record
     await this.records.insertOne({
       txid,
       outputIndex,
       value,
+      creatorIdentityKey,
       createdAt: new Date()
     })
   }

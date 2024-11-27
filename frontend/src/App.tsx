@@ -31,10 +31,12 @@ import './App.scss'
 import { IdentityCard } from 'metanet-identity-react'
 import { MeterContract } from './contracts/Meter'
 import meterContractJson from '../artifacts/Meter.json'
-import { SHIPBroadcaster, LookupResolver, Transaction } from '@bsv/sdk'
+import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet } from '@bsv/sdk'
 import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
 MeterContract.loadArtifact(meterContractJson)
-import { Sig, bsv, toByteString } from 'scrypt-ts'
+import { bsv, toByteString } from 'scrypt-ts'
+
+const anyoneWallet = new ProtoWallet('anyone')
 
 // These are some basic styling rules for the React application.
 // We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
@@ -97,8 +99,20 @@ const App: React.FC = () => {
       setCreateLoading(true)
       const pubKeyResult = await getPublicKey({ identityKey: true })
 
+      const signature = await createSignature({
+        data: new Uint8Array([1]),
+        protocolID: [0, 'meter'],
+        keyID: '1',
+        counterparty: 'anyone'
+      })
+      const signatureHex = Utils.toHex(Array.from(new Uint8Array(signature)))
+
       // Get locking script
-      const meter = new MeterContract(BigInt(1))
+      const meter = new MeterContract(
+        BigInt(1),
+        toByteString(pubKeyResult, false),
+        toByteString(signatureHex, false)
+      )
       const lockingScript = meter.lockingScript.toHex()
       const transactionEnvelope = await createAction({
         description: 'Create a meter',
@@ -142,7 +156,6 @@ const App: React.FC = () => {
 
   // Load meters
   useAsyncEffect(async () => {
-    const pubKeyResult = await getPublicKey({ identityKey: true })
     const resolver = new LookupResolver()
     const lookupResult = await resolver.query({
       service: 'ls_meter',
@@ -157,9 +170,21 @@ const App: React.FC = () => {
       const script = tx.outputs[result.outputIndex].lockingScript.toHex()
       const meter = MeterContract.fromLockingScript(script) as MeterContract
       const convertedToken = toEnvelopeFromBEEF(result.beef)
+
+      const verifyResult = await anyoneWallet.verifySignature({
+        protocolID: [0, 'meter'],
+        keyID: '1',
+        counterparty: meter.creatorIdentityKey,
+        data: [1],
+        signature: Utils.toArray(meter.creatorSignature, 'hex')
+      })
+      if (verifyResult.valid !== true) {
+        throw new Error('Signature invalid')
+      }
+
       parsedResults.push({
         value: Number(meter.count),
-        creatorIdentityKey: pubKeyResult,
+        creatorIdentityKey: String(meter.creatorIdentityKey),
         token: {
           ...convertedToken,
           rawTX: convertedToken.rawTx,

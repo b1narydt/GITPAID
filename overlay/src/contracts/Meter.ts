@@ -12,9 +12,17 @@ export class MeterContract extends SmartContract {
     @prop(true)
     count: bigint
 
-    constructor(count: bigint) {
+    @prop(true)
+    creatorIdentityKey: ByteString
+
+    @prop(true)
+    creatorSignature: ByteString
+
+    constructor(count: bigint, creatorIdentityKey: ByteString, creatorSignature: ByteString) {
         super(...arguments)
         this.count = count
+        this.creatorIdentityKey = creatorIdentityKey
+        this.creatorSignature = creatorSignature
     }
 
     @method(SigHash.ANYONECANPAY_SINGLE)

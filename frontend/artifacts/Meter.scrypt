@@ -1,10 +1,14 @@
 
 contract MeterContract {
   @state int count;
+  @state bytes creatorIdentityKey;
+  @state bytes creatorSignature;
   bytes __scrypt_ts_ctx_hashoutputs;
   int __scrypt_ts_ctx_value;
-  constructor(int count) {
+  constructor(int count, bytes creatorIdentityKey, bytes creatorSignature) {
     this.count = count;
+    this.creatorIdentityKey = creatorIdentityKey;
+    this.creatorSignature = creatorSignature;
   }
   public function incrementOnChain(SigHashPreimage __scrypt_ts_txPreimage) {
     require(Tx.checkPreimageSigHashType(__scrypt_ts_txPreimage, SigHashType(b'c3')));

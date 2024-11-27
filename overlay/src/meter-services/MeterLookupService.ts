@@ -1,6 +1,6 @@
 import { LookupService, LookupQuestion, LookupAnswer, LookupFormula } from '@bsv/overlay'
 import { MeterStorage } from './MeterStorage.js'
-import { Script } from '@bsv/sdk'
+import { Script, Utils } from '@bsv/sdk'
 import { getDocumentation } from '../utils/getDocumentation.js'
 
 import meterContractJson from '../../artifacts/Meter.json'
@@ -41,12 +41,14 @@ export class MeterLookupService implements LookupService {
 
       // Parse out the message field
       const value = Number(meter.count)
+      const creatorIdentityKey = Utils.toHex(Utils.toArray(meter.creatorIdentityKey, 'utf8'))
 
       // Store the token fields for future lookup
       await this.storage.storeRecord(
         txid,
         outputIndex,
-        value
+        value,
+        creatorIdentityKey
       )
     } catch (e) {
       console.error('Error indexing token in lookup database', e)
