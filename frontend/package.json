@@ -6,7 +6,7 @@
   "dependencies": {
     "@babbage/react-prompt": "^0.2.20",
     "@babbage/sdk-ts": "^0.2.47",
-    "@bsv/sdk": "^1.2.2",
+    "@bsv/sdk": "^1.2.3",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^5.16.4",
