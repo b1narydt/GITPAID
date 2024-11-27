@@ -11,7 +11,7 @@ services:
     environment:
       PORT: "8080"
       NODE_ENV: "production"
-      HOSTING_DOMAIN: "https://673c-74-51-29-58.ngrok-free.app"
+      HOSTING_DOMAIN: "https://6d8e-74-51-29-58.ngrok-free.app"
       DB_CONNECTION: "mongodb://mongo:27017/overlay-db"
       MIGRATE_KEY: "my-grate-key"
       SERVER_PRIVATE_KEY: "fa452cfa77d41a4f752eb719a1c17e30deda6375e5cc3d432a18a26ae85d6da9"
