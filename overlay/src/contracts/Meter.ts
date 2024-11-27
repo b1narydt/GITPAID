@@ -5,6 +5,7 @@ import {
     method,
     prop,
     SmartContract,
+    SigHash
 } from 'scrypt-ts'
 
 export class MeterContract extends SmartContract {
@@ -16,7 +17,7 @@ export class MeterContract extends SmartContract {
         this.count = count
     }
 
-    @method()
+    @method(SigHash.ANYONECANPAY_SINGLE)
     public incrementOnChain() {
         // Increment counter value
         this.increment()
@@ -24,8 +25,7 @@ export class MeterContract extends SmartContract {
         // make sure balance in the contract does not change
         const amount: bigint = this.ctx.utxo.value
         // outputs containing the latest state and an optional change output
-        const outputs: ByteString =
-            this.buildStateOutput(amount) + this.buildChangeOutput()
+        const outputs: ByteString = this.buildStateOutput(amount)
         // verify unlocking tx has the same outputs
         assert(this.ctx.hashOutputs == hash256(outputs), 'hashOutputs mismatch')
     }
@@ -33,5 +33,23 @@ export class MeterContract extends SmartContract {
     @method()
     increment(): void {
         this.count++
+    }
+
+    @method(SigHash.ANYONECANPAY_SINGLE)
+    public decrementOnChain() {
+        // Increment counter value
+        this.decrement()
+
+        // make sure balance in the contract does not change
+        const amount: bigint = this.ctx.utxo.value
+        // outputs containing the latest state and an optional change output
+        const outputs: ByteString = this.buildStateOutput(amount)
+        // verify unlocking tx has the same outputs
+        assert(this.ctx.hashOutputs == hash256(outputs), 'hashOutputs mismatch')
+    }
+
+    @method()
+    decrement(): void {
+        this.count--
     }
 }

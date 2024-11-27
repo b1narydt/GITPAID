@@ -4,6 +4,7 @@
   "scryptfile": "Meter.scrypt",
   "sourceMapFile": "Meter.scrypt.map",
   "ctxMethods": [
-    "incrementOnChain"
+    "incrementOnChain",
+    "decrementOnChain"
   ]
 }

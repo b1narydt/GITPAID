@@ -45,7 +45,7 @@ export class MeterTopicManager implements TopicManager {
 
     return {
       outputsToAdmit,
-      coinsToRetain: []
+      coinsToRetain: previousCoins
     }
   }
 

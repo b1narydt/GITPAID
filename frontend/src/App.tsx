@@ -19,6 +19,7 @@ import useAsyncEffect from 'use-async-effect'
 import NoMncModal from './components/NoMncModal/NoMncModal'
 import {
   createAction,
+  createSignature,
   EnvelopeEvidenceApi,
   getPublicKey,
   toBEEFfromEnvelope
@@ -33,6 +34,7 @@ import meterContractJson from '../artifacts/Meter.json'
 import { SHIPBroadcaster, LookupResolver, Transaction } from '@bsv/sdk'
 import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
 MeterContract.loadArtifact(meterContractJson)
+import { Sig, bsv, toByteString } from 'scrypt-ts'
 
 // These are some basic styling rules for the React application.
 // We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
@@ -118,7 +120,13 @@ const App: React.FC = () => {
         {
           value: 1,
           creatorIdentityKey: pubKeyResult,
-          token: transactionEnvelope as Token // Explicitly typing the token object
+          token: {
+            ...transactionEnvelope,
+            rawTX: transactionEnvelope.rawTx,
+            outputIndex: 0,
+            lockingScript: lockingScript,
+            satoshis: 1
+          } as Token
         },
         ...originalMeters
       ]))
@@ -152,7 +160,14 @@ const App: React.FC = () => {
       parsedResults.push({
         value: Number(meter.count),
         creatorIdentityKey: pubKeyResult,
-        token: convertedToken as unknown as Token
+        token: {
+          ...convertedToken,
+          rawTX: convertedToken.rawTx,
+          txid: tx.id('hex'),
+          outputIndex: result.outputIndex,
+          lockingScript: script,
+          satoshis: tx.outputs[result.outputIndex].satoshis as number
+        } as Token
       })
     }
     setMeters(parsedResults)
@@ -160,7 +175,57 @@ const App: React.FC = () => {
   }, [])
 
   // Handle decrement
-  const handleDecrement = (meterIndex: number) => {
+  const handleDecrement = async (meterIndex: number) => {
+    // Spend the token and create a neww transaction
+    const m = meters[meterIndex]
+    const meter = MeterContract.fromLockingScript(m.token.lockingScript)
+    const nextMeter = MeterContract.fromLockingScript(m.token.lockingScript) as MeterContract
+    nextMeter.decrement()
+    const nextScript = nextMeter.lockingScript
+    const parsedFromTx = new bsv.Transaction(m.token.rawTX)
+    const unlockingScript = await meter.getUnlockingScript(async (self) => {
+      const bsvtx = new bsv.Transaction()
+      bsvtx.from({
+        txId: m.token.txid,
+        outputIndex: m.token.outputIndex,
+        script: m.token.lockingScript,
+        satoshis: m.token.satoshis
+      })
+      bsvtx.addOutput(new bsv.Transaction.Output({
+        script: nextScript,
+        satoshis: m.token.satoshis
+      }))
+      self.to = { tx: bsvtx, inputIndex: 0 }
+      self.from = { tx: parsedFromTx, outputIndex: 0 }
+        ; (self as MeterContract).decrementOnChain()
+    })
+    console.log('Got unlocking script', unlockingScript)
+    const broadcastActionParams = {
+      inputs: {
+        [m.token.txid]: {
+          ...m.token,
+          rawTx: m.token.rawTX,
+          outputsToRedeem: [{
+            index: m.token.outputIndex,
+            unlockingScript: unlockingScript.toHex(),
+            spendingDescription: 'Previous counter token'
+          }]
+        }
+      },
+      outputs: [{
+        script: nextScript.toHex(),
+        satoshis: m.token.satoshis,
+        description: 'counter token'
+      }],
+      description: `Decrement a counter`,
+      acceptDelayedBroadcast: false
+    }
+    let currentTX = await createAction(broadcastActionParams)
+    const beefTx = toBEEFfromEnvelope(currentTX as EnvelopeEvidenceApi)
+    // Send the transaction to the overlay network
+    const broadcastResult = await beefTx.tx.broadcast(new SHIPBroadcaster(['tm_meter']))
+    console.log(broadcastResult)
+
     setMeters((originalMeters) => {
       const copy = [...originalMeters]
       copy[meterIndex].value--
@@ -169,7 +234,57 @@ const App: React.FC = () => {
   }
 
   // Handle increment
-  const handleIncrement = (meterIndex: number) => {
+  const handleIncrement = async (meterIndex: number) => {
+    // Spend the token and create a neww transaction
+    const m = meters[meterIndex]
+    const meter = MeterContract.fromLockingScript(m.token.lockingScript)
+    const nextMeter = MeterContract.fromLockingScript(m.token.lockingScript) as MeterContract
+    nextMeter.increment()
+    const nextScript = nextMeter.lockingScript
+    const parsedFromTx = new bsv.Transaction(m.token.rawTX)
+    const unlockingScript = await meter.getUnlockingScript(async (self) => {
+      const bsvtx = new bsv.Transaction()
+      bsvtx.from({
+        txId: m.token.txid,
+        outputIndex: m.token.outputIndex,
+        script: m.token.lockingScript,
+        satoshis: m.token.satoshis
+      })
+      bsvtx.addOutput(new bsv.Transaction.Output({
+        script: nextScript,
+        satoshis: m.token.satoshis
+      }))
+      self.to = { tx: bsvtx, inputIndex: 0 }
+      self.from = { tx: parsedFromTx, outputIndex: 0 }
+        ; (self as MeterContract).incrementOnChain()
+    })
+    console.log('Got unlocking script', unlockingScript)
+    const broadcastActionParams = {
+      inputs: {
+        [m.token.txid]: {
+          ...m.token,
+          rawTx: m.token.rawTX,
+          outputsToRedeem: [{
+            index: m.token.outputIndex,
+            unlockingScript: unlockingScript.toHex(),
+            spendingDescription: 'Previous counter token'
+          }]
+        }
+      },
+      outputs: [{
+        script: nextScript.toHex(),
+        satoshis: m.token.satoshis,
+        description: 'counter token'
+      }],
+      description: `Increment a counter`,
+      acceptDelayedBroadcast: false
+    }
+    let currentTX = await createAction(broadcastActionParams)
+    const beefTx = toBEEFfromEnvelope(currentTX as EnvelopeEvidenceApi)
+    // Send the transaction to the overlay network
+    const broadcastResult = await beefTx.tx.broadcast(new SHIPBroadcaster(['tm_meter']))
+    console.log(broadcastResult)
+
     setMeters((originalMeters) => {
       const copy = [...originalMeters]
       copy[meterIndex].value++

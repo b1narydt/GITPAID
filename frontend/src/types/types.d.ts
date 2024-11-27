@@ -5,14 +5,12 @@ declare module '@babbage/sdk-ts'
 export interface Token {
   inputs: Record<string, OptionalEnvelopeEvidenceApi> | undefined
   mapiResponses: MapiResponseApi[] | undefined
-  outputScript: BitcoinOutputScript
   proof: Buffer | TscMerkleProofApi | undefined
   rawTX: string
   satoshis: number
   txid: string
-  vout: number
-  outputIndex?: number
-  lockingScript?: any
+  outputIndex: number
+  lockingScript: string
 }
 
 export interface Meter {
