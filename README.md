@@ -23,9 +23,6 @@ Directory Structure
     | - script-templates/
   | - artifacts/
   | - dist/
-  | - docs/
-    | - topic-managers/
-    | - lookup-services/
 ```
 
 Root directory can
