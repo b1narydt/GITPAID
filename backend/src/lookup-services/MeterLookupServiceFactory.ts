@@ -2,8 +2,8 @@ import { LookupService, LookupQuestion, LookupAnswer, LookupFormula } from '@bsv
 import { MeterStorage } from './MeterStorage.js'
 import { Script, Utils } from '@bsv/sdk'
 import docs from './MeterLookupDocs.md.js'
-import meterContractJson from '../../artifacts/Meter.json'
-import { MeterContract } from 'src/contracts/Meter.js'
+import meterContractJson from '../../artifacts/Meter.json' with { type: "json" }
+import { MeterContract } from '../contracts/Meter.js'
 import { Db } from 'mongodb'
 MeterContract.loadArtifact(meterContractJson)
 

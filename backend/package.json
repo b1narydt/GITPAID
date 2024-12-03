@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "description": "BSV Blockchain Application Backend",
-  "main": "dist/cjs/mod.js",
   "module": "dist/esm/mod.js",
   "types": "dist/types/mod.d.ts",
   "files": [
@@ -16,13 +15,11 @@
   "exports": {
     ".": {
       "types": "./dist/types/mod.d.ts",
-      "import": "./dist/esm/mod.js",
-      "require": "./dist/cjs/mod.js"
+      "import": "./dist/esm/mod.js"
     },
     "./*.ts": {
       "types": "./dist/types/src/*.d.ts",
-      "import": "./dist/esm/src/*.js",
-      "require": "./dist/cjs/src/*.js"
+      "import": "./dist/esm/src/*.js"
     }
   },
   "scripts": {
@@ -30,7 +27,7 @@
     "test:watch": "npm run build && jest --watch",
     "test:coverage": "npm run build && jest --coverage",
     "lint": "ts-standard --fix src/**/*.ts",
-    "build": "tsc -b && tsconfig-to-dual-package tsconfig.cjs.json",
+    "build": "tsc -b",
     "prepublish": "npm run build",
     "compile": "scrypt-cli c",
     "doc": "ts2md --inputFilename=mod.ts --outputFilename=API.md --filenameSubstring=API --firstHeadingLevel=1"

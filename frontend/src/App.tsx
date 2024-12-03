@@ -20,11 +20,10 @@ import {
 import { type Meter, type Token } from './types/types'
 import './App.scss'
 import { IdentityCard } from 'metanet-identity-react'
-import { MeterContract } from '@bsv/backend'
-import meterContractJson from '@bsv/backend/artifacts/Meter.json'
+import { MeterContract, MeterArtifact } from '@bsv/backend'
 import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet } from '@bsv/sdk'
 import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
-MeterContract.loadArtifact(meterContractJson)
+MeterContract.loadArtifact(MeterArtifact)
 import { bsv, toByteString } from 'scrypt-ts'
 
 const anyoneWallet = new ProtoWallet('anyone')
@@ -63,23 +62,6 @@ const App: React.FC = () => {
   const [createLoading, setCreateLoading] = useState<boolean>(false)
   const [metersLoading, setMetersLoading] = useState<boolean>(true)
   const [meters, setMeters] = useState<Meter[]>([])
-
-  // Run a 1s interval for checking if MNC is running
-  useAsyncEffect(() => {
-    const intervalId = setInterval(async () => {
-      const hasMNC = await checkForMetaNetClient()
-      if (hasMNC === 0) {
-        setIsMncMissing(true) // Open modal if MNC is not found
-      } else {
-        setIsMncMissing(false) // Ensure modal is closed if MNC is found
-      }
-    }, 1000)
-
-    // Return a cleanup function
-    return () => {
-      clearInterval(intervalId)
-    }
-  }, [])
 
   // Creates a new meter.
   // This function will run when the user clicks "OK" in the creation dialog.
@@ -315,7 +297,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      <NoMncModal open={isMncMissing} onClose={() => { setIsMncMissing(false) }} />
       <ToastContainer
         position='top-right'
         autoClose={5000}

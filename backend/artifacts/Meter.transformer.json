@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "errors": [],
+  "scryptfile": "Meter.scrypt",
+  "sourceMapFile": "Meter.scrypt.map",
+  "ctxMethods": [
+    "incrementOnChain",
+    "decrementOnChain"
+  ]
+}

@@ -1,5 +1,5 @@
 import { Collection, Db } from 'mongodb'
-import { MeterRecord, UTXOReference } from 'src/types.js'
+import { MeterRecord, UTXOReference } from '..//types.js'
 
 // Implements a Lookup StorageEngine for Meter
 export class MeterStorage {

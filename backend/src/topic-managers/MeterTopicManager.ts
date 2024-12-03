@@ -1,8 +1,8 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
 import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
 import docs from './MeterTopicDocs.md.js'
-import meterContractJson from '../../artifacts/Meter.json'
-import { MeterContract } from 'src/contracts/Meter.js'
+import meterContractJson from '../../artifacts/Meter.json' with { type: "json" }
+import { MeterContract } from '../contracts/Meter.js'
 MeterContract.loadArtifact(meterContractJson)
 
 const anyoneWallet = new ProtoWallet('anyone')
