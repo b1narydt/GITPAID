@@ -25,6 +25,7 @@
   },
   "include": [
     "src",
+    "../backend/src/contracts",
     "src/types"
   ]
 }

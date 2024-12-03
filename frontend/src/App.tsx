@@ -1,22 +1,15 @@
-/**
- * src/App.tsx
- *
- * This file contains the primary business logic and UI code for the ToDo
- * application.
- */
-import React, { useState, useEffect, type FormEvent } from 'react'
+import React, { useState, type FormEvent } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
-  AppBar, Toolbar, List, ListItem, ListItemText, ListItemIcon, Checkbox, Dialog,
-  DialogTitle, DialogContent, DialogContentText, DialogActions, TextField,
+  AppBar, Toolbar, List, ListItem, Dialog,
+  DialogTitle, DialogContent, DialogContentText, DialogActions,
   Button, Fab, LinearProgress, Typography, IconButton, Grid
 } from '@mui/material'
 import { styled } from '@mui/system'
 import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import useAsyncEffect from 'use-async-effect'
-import NoMncModal from './components/NoMncModal/NoMncModal'
 import {
   createAction,
   createSignature,
@@ -24,13 +17,11 @@ import {
   getPublicKey,
   toBEEFfromEnvelope
 } from '@babbage/sdk-ts'
-import checkForMetaNetClient from './utils/checkForMetaNetClient'
 import { type Meter, type Token } from './types/types'
-// This stylesheet also uses this for themeing.
 import './App.scss'
 import { IdentityCard } from 'metanet-identity-react'
-import { MeterContract } from './contracts/Meter'
-import meterContractJson from '../artifacts/Meter.json'
+import { MeterContract } from '@bsv/backend'
+import meterContractJson from '@bsv/backend/artifacts/Meter.json'
 import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet } from '@bsv/sdk'
 import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
 MeterContract.loadArtifact(meterContractJson)
