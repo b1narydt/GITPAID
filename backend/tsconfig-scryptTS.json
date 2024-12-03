@@ -14,7 +14,14 @@
     "noImplicitAny": false,
     "skipLibCheck": true,
     "sourceMap": true,
-    "noEmit": true
+    "noEmit": true,
+    "plugins": [
+      {
+        "transform": "/Users/tyeverett/projects/meter/backend/node_modules/scrypt-ts-transpiler/dist/index.js",
+        "transformProgram": true,
+        "outDir": "artifacts"
+      }
+    ]
   },
   "include": [
     "src/contracts/**/*.ts"

@@ -1,10 +1,13 @@
 {
-  "name": "bsv-project",
+  "name": "@bsv/project",
   "private": true,
   "version": "1.0.0",
   "description": "Standard BSV project structure",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "lars start"
+  },
+  "dependencies": {
+    "@bsv/lars": "file:../lars"
   },
   "keywords": [],
   "author": "",

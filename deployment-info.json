@@ -2,7 +2,7 @@
     "schema": "bsv-app",
     "schemaVersion": "1.0",
     "topicManagers": {
-        "tm_meter": "./backend/src/topic-managers/MeterTopicManager.ts",
+        "tm_meter": "./backend/src/topic-managers/MeterTopicManager.ts"
     },
     "lookupServices": {
         "ls_meter": {
