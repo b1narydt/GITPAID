@@ -7,7 +7,7 @@
     "start": "lars start"
   },
   "dependencies": {
-    "@bsv/lars": "file:../lars"
+    "@bsv/lars": "1.0.0"
   },
   "keywords": [],
   "author": "",
