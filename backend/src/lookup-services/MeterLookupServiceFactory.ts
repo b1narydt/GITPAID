@@ -1,12 +1,11 @@
 import { LookupService, LookupQuestion, LookupAnswer, LookupFormula } from '@bsv/overlay'
 import { MeterStorage } from './MeterStorage.js'
 import { Script, Utils } from '@bsv/sdk'
-import { getDocumentation } from '../utils/getDocumentation.js'
-
+import docs from './MeterLookupDocs.md.js'
 import meterContractJson from '../../artifacts/Meter.json'
 import { MeterContract } from 'src/contracts/Meter.js'
+import { Db } from 'mongodb'
 MeterContract.loadArtifact(meterContractJson)
-
 
 /**
  * Implements a Meter lookup service
@@ -103,7 +102,7 @@ class MeterLookupService implements LookupService {
    * @returns A promise that resolves to the documentation string
    */
   async getDocumentation(): Promise<string> {
-    return await getDocumentation('./docs/HelloWorld/helloworld-lookup-service.md')
+    return docs
   }
 
   /**

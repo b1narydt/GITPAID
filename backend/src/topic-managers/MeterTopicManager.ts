@@ -1,6 +1,6 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
 import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
-import { getDocumentation } from '../utils/getDocumentation.js'
+import docs from './MeterTopicDocs.md.js'
 import meterContractJson from '../../artifacts/Meter.json'
 import { MeterContract } from 'src/contracts/Meter.js'
 MeterContract.loadArtifact(meterContractJson)
@@ -69,7 +69,7 @@ export default class MeterTopicManager implements TopicManager {
    * @returns A promise that resolves to a string containing the documentation
    */
   async getDocumentation(): Promise<string> {
-    return await getDocumentation('./docs/HelloWorld/helloworld-lookup-service.md')
+    return docs
   }
 
   /**
