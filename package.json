@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "description": "Standard BSV project structure",
   "scripts": {
-    "start": "lars start"
+    "start": "lars start",
+    "frontend": "cd frontend && npm run start"
   },
   "dependencies": {
-    "@bsv/lars": "^1.0.2"
+    "@bsv/lars": "^1.0.4"
   },
   "keywords": [],
   "author": "",

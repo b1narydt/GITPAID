@@ -117,7 +117,10 @@ class MeterLookupService implements LookupService {
     version?: string
     informationURL?: string
   }> {
-    throw new Error('Method not implemented.')
+    return {
+      name: 'Meter Lookup Service',
+      shortDescription: 'Meters, up and down.'
+    }
   }
 }
 

@@ -46,8 +46,8 @@ export default class MeterTopicManager implements TopicManager {
 
           outputsToAdmit.push(i)
         } catch (error) {
-          console.error('Error processing output:', error)
           // Continue processing other outputs
+          continue
         }
       }
       if (outputsToAdmit.length === 0) {
@@ -84,6 +84,9 @@ export default class MeterTopicManager implements TopicManager {
     version?: string
     informationURL?: string
   }> {
-    throw new Error('Method not implemented.')
+    return {
+      name: 'Meter Topic Manager',
+      shortDescription: 'Meters, up and down.'
+    }
   }
 }
