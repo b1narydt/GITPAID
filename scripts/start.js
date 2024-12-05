@@ -13,7 +13,6 @@ const backend = spawn('npm', ['run', 'backend'], {
 
 // Listen for backend readiness using `wait-on`
 const waitForBackend = () => {
-  console.log('Waiting for the backend to be ready at http://localhost:8080...')
   waitOn(
     {
       resources: ['http://localhost:8080'], // Replace with actual backend URL
