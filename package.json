@@ -4,12 +4,13 @@
   "version": "1.0.0",
   "description": "Standard BSV project structure",
   "scripts": {
-    "start": "lars start",
-    "config": "lars config",
-    "frontend": "cd frontend && npm run start"
+    "backend": "lars start",
+    "frontend": "cd frontend && npm run start",
+    "start": "node ./scripts/start.js"
   },
   "dependencies": {
-    "@bsv/lars": "^1.0.5"
+    "@bsv/lars": "^1.0.5",
+    "wait-on": "^8.0.1"
   },
   "keywords": [],
   "author": "",
