@@ -18,10 +18,9 @@ import {
   toBEEFfromEnvelope
 } from '@babbage/sdk-ts'
 import { type Meter, type Token } from './types/types'
-import './App.scss'
 import { IdentityCard } from 'metanet-identity-react'
 import { MeterContract, MeterArtifact } from '@bsv/backend'
-import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet } from '@bsv/sdk'
+import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet, LookupAnswer } from '@bsv/sdk'
 import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
 MeterContract.loadArtifact(MeterArtifact)
 import { bsv, toByteString } from 'scrypt-ts'
@@ -129,47 +128,58 @@ const App: React.FC = () => {
 
   // Load meters
   useAsyncEffect(async () => {
-    const resolver = new LookupResolver()
-    const lookupResult = await resolver.query({
-      service: 'ls_meter',
-      query: 'findAll'
-    })
-    if (lookupResult.type !== 'output-list') {
-      throw new Error('Wrong result type!')
-    }
-    const parsedResults: Meter[] = []
-    for (const result of lookupResult.outputs) {
-      const tx = Transaction.fromBEEF(result.beef)
-      const script = tx.outputs[result.outputIndex].lockingScript.toHex()
-      const meter = MeterContract.fromLockingScript(script) as MeterContract
-      const convertedToken = toEnvelopeFromBEEF(result.beef)
-
-      const verifyResult = await anyoneWallet.verifySignature({
-        protocolID: [0, 'meter'],
-        keyID: '1',
-        counterparty: meter.creatorIdentityKey,
-        data: [1],
-        signature: Utils.toArray(meter.creatorSignature, 'hex')
+    try {
+      const resolver = new LookupResolver()
+      let lookupResult = await resolver.query({
+        service: 'ls_meter',
+        query: 'findAll'
       })
-      if (verifyResult.valid !== true) {
-        throw new Error('Signature invalid')
+      if (lookupResult === undefined || lookupResult.type !== 'output-list') {
+        throw new Error('Wrong result type!')
+      }
+      const parsedResults: Meter[] = []
+      for (const result of lookupResult.outputs) {
+        try {
+          const tx = Transaction.fromBEEF(result.beef)
+          const script = tx.outputs[result.outputIndex].lockingScript.toHex()
+          const meter = MeterContract.fromLockingScript(script) as MeterContract
+          const convertedToken = toEnvelopeFromBEEF(result.beef)
+
+          const verifyResult = await anyoneWallet.verifySignature({
+            protocolID: [0, 'meter'],
+            keyID: '1',
+            counterparty: meter.creatorIdentityKey,
+            data: [1],
+            signature: Utils.toArray(meter.creatorSignature, 'hex')
+          })
+          if (verifyResult.valid !== true) {
+            throw new Error('Signature invalid')
+          }
+
+          parsedResults.push({
+            value: Number(meter.count),
+            creatorIdentityKey: String(meter.creatorIdentityKey),
+            token: {
+              ...convertedToken,
+              rawTX: convertedToken.rawTx,
+              txid: tx.id('hex'),
+              outputIndex: result.outputIndex,
+              lockingScript: script,
+              satoshis: tx.outputs[result.outputIndex].satoshis as number
+            } as Token
+          })
+        } catch (error) {
+          console.error('Failed to parse Meter. Error:', error)
+        }
       }
 
-      parsedResults.push({
-        value: Number(meter.count),
-        creatorIdentityKey: String(meter.creatorIdentityKey),
-        token: {
-          ...convertedToken,
-          rawTX: convertedToken.rawTx,
-          txid: tx.id('hex'),
-          outputIndex: result.outputIndex,
-          lockingScript: script,
-          satoshis: tx.outputs[result.outputIndex].satoshis as number
-        } as Token
-      })
+      setMeters(parsedResults)
+      setMetersLoading(false)
+    } catch (error) {
+      console.error('Failed to load Meters. Error:', error)
+    } finally {
+      setMetersLoading(false)
     }
-    setMeters(parsedResults)
-    setMetersLoading(false)
   }, [])
 
   // Handle decrement
