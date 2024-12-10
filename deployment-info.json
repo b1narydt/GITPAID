@@ -17,5 +17,101 @@
     "contracts": {
         "language": "sCrypt",
         "baseDirectory": "./backend"
-    }
+    },
+    "deployments": [
+        {
+            "name": "Local LARS",
+            "network": "testnet",
+            "provider": "LARS",
+            "run": [
+                "backend"
+            ]
+        },
+        {
+            "name": "Testnet",
+            "network": "testnet",
+            "provider": "CARS",
+            "CARSCloudURL": "https://example.com",
+            "deploy": [
+                "frontend",
+                "backend"
+            ],
+            "projectID": "deadbeef",
+            "authentication": "none",
+            "payments": "none",
+            "frontendHostingMethod": "HTTPS"
+        },
+        {
+            "name": "foobar",
+            "network": "mil-net",
+            "provider": "CARS",
+            "CARSCloudURL": "http://localhost:7777",
+            "deploy": [
+                "frontend",
+                "backend"
+            ],
+            "projectID": "e6f0965d09400703373ebfc228e75ae0",
+            "authentication": {
+                "tm_meter": {
+                    "certifiers": [
+                        "0295bf1c7842d14babf60daf2c733956c331f9dcb2c79e41f85fd1dda6a3fa4549"
+                    ],
+                    "certificateTypes": [
+                        "z40BOInXkI8m7f/wBrv4MJ09bZfzZbTj2fJqCtONqCY="
+                    ]
+                },
+                "ls_meter": {
+                    "certifiers": [
+                        "0295bf1c7842d14babf60daf2c733956c331f9dcb2c79e41f85fd1dda6a3fa4549",
+                        "03285263f06139b66fb27f51cf8a92e9dd007c4c4b83876ad6c3e7028db450a4c2"
+                    ],
+                    "certificateTypes": [
+                        "z40BOInXkI8m7f/wBrv4MJ09bZfzZbTj2fJqCtONqCY=",
+                        "exOl3KM0dIJ04EW5pZgbZmPag6MdJXd3/a1enmUU/BA="
+                    ]
+                }
+            },
+            "payments": {
+                "tm_meter": 1000,
+                "ls_meter": 2000
+            },
+            "frontendHostingMethod": "HTTPS"
+        },
+        {
+            "name": "Mainnet CARS Composite 1",
+            "network": "mainnet",
+            "provider": "CARS",
+            "CARSCloudURL": "https://example2.com",
+            "deploy": [
+                "backend",
+                "frontend"
+            ],
+            "frontendHostingMethod": "HTTPS",
+            "projectID": "deadbeef3",
+            "authentication": {
+                "tm_meter": {
+                    "certifiers": [
+                        "0295bf1c7842d14babf60daf2c733956c331f9dcb2c79e41f85fd1dda6a3fa4549"
+                    ],
+                    "certificateTypes": [
+                        "z40BOInXkI8m7f/wBrv4MJ09bZfzZbTj2fJqCtONqCY="
+                    ]
+                },
+                "ls_meter": {
+                    "certifiers": [
+                        "0295bf1c7842d14babf60daf2c733956c331f9dcb2c79e41f85fd1dda6a3fa4549",
+                        "03285263f06139b66fb27f51cf8a92e9dd007c4c4b83876ad6c3e7028db450a4c2"
+                    ],
+                    "certificateTypes": [
+                        "z40BOInXkI8m7f/wBrv4MJ09bZfzZbTj2fJqCtONqCY=",
+                        "exOl3KM0dIJ04EW5pZgbZmPag6MdJXd3/a1enmUU/BA="
+                    ]
+                }
+            },
+            "payments": {
+                "tm_meter": 1000,
+                "ls_meter": 2000
+            }
+        }
+    ]
 }
