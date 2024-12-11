@@ -20,14 +20,6 @@
   },
   "configs": [
     {
-      "name": "Local LARS",
-      "network": "testnet",
-      "provider": "LARS",
-      "run": [
-        "backend"
-      ]
-    },
-    {
       "name": "production",
       "provider": "CARS",
       "CARSCloudURL": "http://localhost:7777",
@@ -50,6 +42,14 @@
         "backend"
       ],
       "frontendHostingMethod": "HTTPS"
+    },
+    {
+      "name": "Local LARS",
+      "network": "mainnet",
+      "provider": "LARS",
+      "run": [
+        "backend"
+      ]
     }
   ]
 }

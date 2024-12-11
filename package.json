@@ -9,7 +9,7 @@
     "start": "node ./scripts/start.js"
   },
   "dependencies": {
-    "@bsv/lars": "^1.0.5",
+    "@bsv/lars": "^1.0.8",
     "wait-on": "^8.0.1"
   },
   "keywords": [],
