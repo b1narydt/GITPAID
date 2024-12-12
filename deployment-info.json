@@ -20,36 +20,24 @@
   },
   "configs": [
     {
-      "name": "production",
-      "provider": "CARS",
-      "CARSCloudURL": "http://localhost:7777",
-      "projectID": "0a919b3d3a03bb00e58eb8b49d7deab1",
-      "network": "mainnet",
-      "deploy": [
-        "frontend",
-        "backend"
-      ],
-      "frontendHostingMethod": "HTTPS"
-    },
-    {
-      "name": "staging",
-      "provider": "CARS",
-      "CARSCloudURL": "http://localhost:7777",
-      "projectID": "d22546947e82d301684b2f0fdae673aa",
-      "network": "testnet",
-      "deploy": [
-        "frontend",
-        "backend"
-      ],
-      "frontendHostingMethod": "HTTPS"
-    },
-    {
       "name": "Local LARS",
       "network": "mainnet",
       "provider": "LARS",
       "run": [
         "backend"
       ]
+    },
+    {
+      "name": "production",
+      "provider": "CARS",
+      "CARSCloudURL": "http://localhost:7777",
+      "projectID": "6bf0a1435dac3a0e83c98b1b0adb9eb3",
+      "network": "mainnet",
+      "deploy": [
+        "frontend",
+        "backend"
+      ],
+      "frontendHostingMethod": "HTTPS"
     }
   ]
 }
