@@ -24,14 +24,15 @@
       "network": "mainnet",
       "provider": "LARS",
       "run": [
-        "backend"
+        "backend",
+        "frontend"
       ]
     },
     {
-      "name": "production",
+      "name": "prod",
       "provider": "CARS",
       "CARSCloudURL": "http://localhost:7777",
-      "projectID": "6bf0a1435dac3a0e83c98b1b0adb9eb3",
+      "projectID": "feed51e6499e6378f37f151484dd21c7",
       "network": "mainnet",
       "deploy": [
         "frontend",

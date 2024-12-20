@@ -1,44 +1,53 @@
 # BSV Project
 
-Standard BSV project structure:
+Standard BSV project structure.
+
+- [REFER TO BRC-102 FOR FULL DETAILS](https://github.com/bitcoin-sv/BRCs/blob/master/apps/0102.md)
+- [LARS SYSTEM](https://github.com/bitcoin-sv/lars)
+- [CARS SYSTEM](https://github.com/bitcoin-sv/cars-cli)
+- [RUN YOUR OWN CARS NODE](https://github.com/bitcoin-sv/cars-node)
+
+## Getting Started
+
+- Clone this repository
+- Run `npm i` to install dependencies
+- Run `num run lars` to configure the local environment according to your needs
+- Use `npm run start` to spin up and start writing code
+- When you're ready to publish your project, start by running `npm run cars` and configuring one (or, especially for overlays, ideally multiple) hosting provider(s)
+- For each of your configurations, execute `npm run build` to create CARS project artifacts
+- Deploy with `npm run deploy` and your project will be online
+- Use `cars` interactively, or visit your hosting provider(s) web portals, to view logs, configure custom domains, and pay your hosting bills
+- Share your new BSV project, it is now online!
+
+## Directory Structure
+
+The project structure is roughly as follows, although it can vary by project.
 
 ```
-Directory Structure
 | - deployment-info.json
 | - package.json
 | - local-data/
 | - frontend/
   | - package.json
   | - webpack.config.js
-  | - src/
-  | - public/
+  | - src/...
+  | - public/...
+  | - build/...
 | - backend/
   | - package.json
   | - tsconfig.json
   | - mod.ts
   | - src/
-    | - contracts/
-    | - lookup-services/
-    | - topic-managers/
-    | - script-templates/
+    | - contracts/...
+    | - lookup-services/...
+    | - topic-managers/...
+    | - script-templates/...
   | - artifacts/
   | - dist/
 ```
 
-Root directory can
-- Compile contracts
-- Compile backend (npm package)
-- Build frontend
-- Start frontend
-- Start LARS
-- Start frontend and LARS
+The one constant is `deployment-info.json`.
 
-Backend directory can:
-- Compile contracts
-- Compile backend (npm package)
-- Publish package to NPM
-- Publish package to chain (in the future)
+## License
 
-Frontend directory can:
-- Build frontend
-- Start frontend
+[Open BSV License](./LICENSE.txt)
