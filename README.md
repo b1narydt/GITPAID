@@ -2,16 +2,18 @@
 
 Standard BSV project structure.
 
-- [REFER TO BRC-102 FOR FULL DETAILS](https://github.com/bitcoin-sv/BRCs/blob/master/apps/0102.md)
-- [LARS SYSTEM](https://github.com/bitcoin-sv/lars)
-- [CARS SYSTEM](https://github.com/bitcoin-sv/cars-cli)
+Helpful Links:
+
+- [LARS (for local development)](https://github.com/bitcoin-sv/lars)
+- [CARS CLI (for cloud deployment)](https://github.com/bitcoin-sv/cars-cli)
 - [RUN YOUR OWN CARS NODE](https://github.com/bitcoin-sv/cars-node)
+- [Specification for deployment-info.json](https://github.com/bitcoin-sv/BRCs/blob/master/apps/0102.md)
 
 ## Getting Started
 
 - Clone this repository
 - Run `npm i` to install dependencies
-- Run `num run lars` to configure the local environment according to your needs
+- Run `npm run lars` to configure the local environment according to your needs
 - Use `npm run start` to spin up and start writing code
 - When you're ready to publish your project, start by running `npm run cars` and configuring one (or, especially for overlays, ideally multiple) hosting provider(s)
 - For each of your configurations, execute `npm run build` to create CARS project artifacts

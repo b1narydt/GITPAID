@@ -29,10 +29,10 @@
       ]
     },
     {
-      "name": "prod",
+      "name": "babbage",
       "provider": "CARS",
-      "CARSCloudURL": "http://localhost:7777",
-      "projectID": "feed51e6499e6378f37f151484dd21c7",
+      "CARSCloudURL": "https://cars.babbage.systems",
+      "projectID": "367b9d6893325fb058778371725cfdd5",
       "network": "mainnet",
       "deploy": [
         "frontend",
@@ -41,4 +41,4 @@
       "frontendHostingMethod": "HTTPS"
     }
   ]
-}
+}""
