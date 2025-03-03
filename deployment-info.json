@@ -29,10 +29,22 @@
       ]
     },
     {
+      "name": "atx",
+      "provider": "CARS",
+      "CARSCloudURL": "https://cars.atx.systems",
+      "projectID": "28aa5632cc9f2974234bba40ff00f20d",
+      "network": "mainnet",
+      "deploy": [
+        "frontend",
+        "backend"
+      ],
+      "frontendHostingMethod": "HTTPS"
+    },
+    {
       "name": "babbage",
       "provider": "CARS",
       "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "367b9d6893325fb058778371725cfdd5",
+      "projectID": "161a4f0f091010a0f8a34a5d1d1b9dd7",
       "network": "mainnet",
       "deploy": [
         "frontend",
