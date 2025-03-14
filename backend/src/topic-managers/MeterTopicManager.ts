@@ -1,7 +1,7 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
 import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
 import docs from './MeterTopicDocs.md.js'
-import meterContractJson from '../../artifacts/Meter.json' with { type: "json" }
+import meterContractJson from '../../artifacts/Meter.json' with { type: 'json' }
 import { MeterContract } from '../contracts/Meter.js'
 MeterContract.loadArtifact(meterContractJson)
 
@@ -17,7 +17,13 @@ export default class MeterTopicManager implements TopicManager {
    * @param previousCoins - The previous coins to consider
    * @returns A promise that resolves with the admittance instructions
    */
-  async identifyAdmissibleOutputs(beef: number[], previousCoins: number[]): Promise<AdmittanceInstructions> {
+  async identifyAdmissibleOutputs(
+    beef: number[],
+    previousCoins: number[]
+  ): Promise<AdmittanceInstructions> {
+    const beefStr = JSON.stringify(beef, null, 2)
+    throw new Error(`topicManager:beef:${beefStr}}`)
+
     const outputsToAdmit: number[] = []
     try {
       const parsedTransaction = Transaction.fromBEEF(beef)
@@ -55,7 +61,10 @@ export default class MeterTopicManager implements TopicManager {
         // throw new ERR_BAD_REQUEST('No outputs admitted!')
       }
     } catch (error) {
-      console.error('Error identifying admissible outputs:', error)
+      const beefStr = JSON.stringify(beef, null, 2)
+      throw new Error(
+        `topicManager:Error:identifying admissible outputs:${error} beef:${beefStr}}`
+      )
     }
 
     return {

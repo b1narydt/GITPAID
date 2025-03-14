@@ -1,30 +1,48 @@
-import React, { useState, type FormEvent } from 'react'
+import React, { useState, FormEvent } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import {
-  AppBar, Toolbar, List, ListItem, Dialog,
-  DialogTitle, DialogContent, DialogContentText, DialogActions,
-  Button, Fab, LinearProgress, Typography, IconButton, Grid
+  AppBar,
+  Toolbar,
+  List,
+  ListItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  Fab,
+  LinearProgress,
+  Typography,
+  IconButton,
+  Grid
 } from '@mui/material'
 import { styled } from '@mui/system'
 import AddIcon from '@mui/icons-material/Add'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import useAsyncEffect from 'use-async-effect'
-import {
-  createAction,
-  createSignature,
-  EnvelopeEvidenceApi,
-  getPublicKey,
-  toBEEFfromEnvelope
-} from '@babbage/sdk-ts'
-import { type Meter, type Token } from './types/types'
-import { IdentityCard } from 'metanet-identity-react'
+import { Meter, Token } from './types/types'
 import { MeterContract, MeterArtifact } from '@bsv/backend'
-import { SHIPBroadcaster, LookupResolver, Transaction, Utils, ProtoWallet, LookupAnswer } from '@bsv/sdk'
-import { toEnvelopeFromBEEF } from '@babbage/sdk-ts/out/src/utils/toBEEF'
+import {
+  SHIPBroadcaster,
+  LookupResolver,
+  Transaction,
+  Utils,
+  ProtoWallet,
+  WalletClient,
+  SHIPBroadcasterConfig,
+  HTTPSOverlayBroadcastFacilitator
+} from '@bsv/sdk'
 MeterContract.loadArtifact(MeterArtifact)
 import { bsv, toByteString } from 'scrypt-ts'
+import { Card } from '@mui/material'
+import { CardContent } from '@mui/material'
+import { ListOutputsArgs } from '@bsv/sdk/dist/types/src/wallet'
+import { AtomicBEEF } from '@bsv/sdk/dist/types/src/wallet/Wallet.interfaces'
+import { CreateActionArgs } from '@babbage/sdk-ts/out/src/sdk'
 
+// Only used to verify signature
 const anyoneWallet = new ProtoWallet('anyone')
 
 // These are some basic styling rules for the React application.
@@ -56,7 +74,6 @@ const GitHubIconStyle = styled(IconButton)({
 
 const App: React.FC = () => {
   // These are some state variables that control the app's interface.
-  const [isMncMissing, setIsMncMissing] = useState<boolean>(false)
   const [createOpen, setCreateOpen] = useState<boolean>(false)
   const [createLoading, setCreateLoading] = useState<boolean>(false)
   const [metersLoading, setMetersLoading] = useState<boolean>(true)
@@ -64,61 +81,95 @@ const App: React.FC = () => {
 
   // Creates a new meter.
   // This function will run when the user clicks "OK" in the creation dialog.
-  const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault() // Stop the HTML form from reloading the page.
+
+  const handleCreateSubmit = async (
+    e: FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault()
     try {
-      // Now, we start a loading bar before the heavy lifting.
       setCreateLoading(true)
-      const pubKeyResult = await getPublicKey({ identityKey: true })
 
-      const signature = await createSignature({
-        data: new Uint8Array([1]),
-        protocolID: [0, 'meter'],
-        keyID: '1',
-        counterparty: 'anyone'
-      })
-      const signatureHex = Utils.toHex(Array.from(new Uint8Array(signature)))
+      const walletClient = new WalletClient('json-api', 'non-admin.com')
 
-      // Get locking script
+      const publicKey = (await walletClient.getPublicKey({ identityKey: true }))
+        .publicKey
+
+      const signature = Utils.toHex(
+        (
+          await walletClient.createSignature({
+            data: [1],
+            protocolID: [0, 'meter'],
+            keyID: '1',
+            counterparty: 'anyone'
+          })
+        ).signature
+      )
+
       const meter = new MeterContract(
         BigInt(1),
-        toByteString(pubKeyResult, false),
-        toByteString(signatureHex, false)
+        toByteString(publicKey, false),
+        toByteString(signature, false)
       )
       const lockingScript = meter.lockingScript.toHex()
-      const transactionEnvelope = await createAction({
-        description: 'Create a meter',
-        outputs: [{
-          script: lockingScript,
-          satoshis: 1,
-          description: 'meter output'
-        }]
-      })
-      const beefTx = toBEEFfromEnvelope(transactionEnvelope as EnvelopeEvidenceApi)
-      const broadcaster = new SHIPBroadcaster(['tm_meter'])
-      // Send the transaction to the overlay network
-      const broadcastResult = await beefTx.tx.broadcast(broadcaster)
-      console.log(broadcastResult)
 
-      // created, and added to the list.
+      const newMeterToken = await walletClient.createAction({
+        description: 'Create a meter',
+        outputs: [
+          {
+            basket: 'meter tokens',
+            lockingScript,
+            satoshis: 1,
+            outputDescription: 'Meter output'
+          }
+        ],
+        options: { randomizeOutputs: false }
+      })
+
+      if (!newMeterToken.tx) {
+        throw new Error('Transaction is undefined')
+      }
+
+      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
+      const txid = transaction.id('hex')
+
+      const args: SHIPBroadcasterConfig = {
+        networkPreset: 'local',
+        facilitator: new HTTPSOverlayBroadcastFacilitator(fetch, true),
+        requireAcknowledgmentFromAnyHostForTopics: 'any' // Accept acknowledgment from any host
+      }
+      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
+      console.log('handleCreateSubmit:broadcaster:', broadcaster)
+      const broadcasterResult = await broadcaster.broadcast(transaction)
+
+      console.log('broadcasterResult.txid:', broadcasterResult.txid)
+      if (broadcasterResult.status === 'error') {
+        console.error(
+          'broadcasterResult.description:',
+          broadcasterResult.description
+        )
+        //throw new Error('Transaction failed to broadcast')
+      }
+      //console.log('broadcasterResult.message:', broadcasterResult.message)
+
       toast.dark('Meter successfully created!')
-      setMeters((originalMeters) => ([
+
+      // Update the meters state with the new transaction
+      setMeters(originalMeters => [
         {
-          value: 1,
-          creatorIdentityKey: pubKeyResult,
+          value: 0,
+          creatorIdentityKey: publicKey,
           token: {
-            ...transactionEnvelope,
-            rawTX: transactionEnvelope.rawTx,
+            rawTX: Utils.toHex(newMeterToken.tx!),
+            txid,
             outputIndex: 0,
             lockingScript: lockingScript,
             satoshis: 1
           } as Token
         },
         ...originalMeters
-      ]))
+      ])
       setCreateOpen(false)
     } catch (e) {
-      // Any errors are shown on the screen and printed in the developer console
       toast.error((e as Error).message)
       console.error(e)
     } finally {
@@ -126,189 +177,397 @@ const App: React.FC = () => {
     }
   }
 
-  // Load meters
-  useAsyncEffect(async () => {
-    try {
-      const resolver = new LookupResolver()
-      let lookupResult = await resolver.query({
-        service: 'ls_meter',
-        query: 'findAll'
-      })
-      if (lookupResult === undefined || lookupResult.type !== 'output-list') {
-        throw new Error('Wrong result type!')
-      }
-      const parsedResults: Meter[] = []
-      for (const result of lookupResult.outputs) {
+  useAsyncEffect(() => {
+    const fetchMeters = async () => {
+      try {
+        let lookupResult: any = undefined
+
         try {
-          const tx = Transaction.fromBEEF(result.beef)
-          const script = tx.outputs[result.outputIndex].lockingScript.toHex()
-          const meter = MeterContract.fromLockingScript(script) as MeterContract
-          const convertedToken = toEnvelopeFromBEEF(result.beef)
+          const resolver = new LookupResolver({ networkPreset: 'local' })
+          console.log('Resolver Object:', resolver)
 
-          const verifyResult = await anyoneWallet.verifySignature({
-            protocolID: [0, 'meter'],
-            keyID: '1',
-            counterparty: meter.creatorIdentityKey,
-            data: [1],
-            signature: Utils.toArray(meter.creatorSignature, 'hex')
+          // Perform the query and store the result
+          lookupResult = await resolver.query({
+            service: 'ls_meter',
+            query: { findAll: true }
           })
-          if (verifyResult.valid !== true) {
-            throw new Error('Signature invalid')
+
+          // Check the result type
+          if (!lookupResult || lookupResult.type !== 'output-list') {
+            throw new Error('Wrong result type!')
           }
-
-          parsedResults.push({
-            value: Number(meter.count),
-            creatorIdentityKey: String(meter.creatorIdentityKey),
-            token: {
-              ...convertedToken,
-              rawTX: convertedToken.rawTx,
-              txid: tx.id('hex'),
-              outputIndex: result.outputIndex,
-              lockingScript: script,
-              satoshis: tx.outputs[result.outputIndex].satoshis as number
-            } as Token
-          })
-        } catch (error) {
-          console.error('Failed to parse Meter. Error:', error)
+        } catch (e) {
+          console.error('Lookup error:', e)
+          return // Return early if lookup fails to prevent further execution
         }
-      }
 
-      setMeters(parsedResults)
-      setMetersLoading(false)
-    } catch (error) {
-      console.error('Failed to load Meters. Error:', error)
-    } finally {
-      setMetersLoading(false)
+        // Ensure that lookupResult is valid before accessing `outputs`
+        if (!lookupResult?.outputs) {
+          console.error('No outputs found in lookupResult')
+          return // Return early if `outputs` is not available
+        }
+
+        const parsedResults: Meter[] = []
+
+        // Process each result
+        for (const result of lookupResult.outputs) {
+          try {
+            const tx = Transaction.fromBEEF(result.beef)
+            const script =
+              tx.outputs[Number(result.outputIndex)].lockingScript.toHex()
+            const meter = MeterContract.fromLockingScript(
+              script
+            ) as MeterContract
+
+            console.log('meter.count:', meter.count)
+            console.log('meter.creatorIdentityKey:', meter.creatorIdentityKey)
+            console.log(
+              'tx.outputs[Number(result.outputIndex)]:',
+              tx.outputs[Number(result.outputIndex)]
+            )
+
+            // Signature verification
+            const verifyResult = await anyoneWallet.verifySignature({
+              protocolID: [0, 'meter'],
+              keyID: '1',
+              counterparty: meter.creatorIdentityKey,
+              data: [1],
+              signature: Utils.toArray(meter.creatorSignature, 'hex')
+            })
+
+            if (!verifyResult.valid) {
+              throw new Error('Signature invalid')
+            }
+
+            const rawTX = Utils.toHex(tx.toBEEF())
+
+            console.log('fetchMeters Transaction rawTX:', rawTX)
+
+            parsedResults.push({
+              value: Number(meter.count),
+              creatorIdentityKey: String(meter.creatorIdentityKey),
+              token: {
+                rawTX,
+                txid: tx.id('hex'),
+                outputIndex: result.outputIndex,
+                lockingScript: script,
+                satoshis: tx.outputs[Number(result.outputIndex)]
+                  .satoshis as number
+              } as Token
+            })
+          } catch (error) {
+            console.error('Failed to parse Meter. Error:', error)
+          }
+        }
+
+        // Set the meters data
+        setMeters(parsedResults)
+      } catch (error) {
+        console.error('Failed to load Meters:', error)
+      } finally {
+        setMetersLoading(false)
+      }
     }
+
+    fetchMeters()
   }, [])
 
-  // Handle decrement
-  const handleDecrement = async (meterIndex: number) => {
-    // Spend the token and create a neww transaction
-    const m = meters[meterIndex]
-    const meter = MeterContract.fromLockingScript(m.token.lockingScript)
-    const nextMeter = MeterContract.fromLockingScript(m.token.lockingScript) as MeterContract
-    nextMeter.decrement()
-    const nextScript = nextMeter.lockingScript
-    const parsedFromTx = new bsv.Transaction(m.token.rawTX)
-    const unlockingScript = await meter.getUnlockingScript(async (self) => {
-      const bsvtx = new bsv.Transaction()
-      bsvtx.from({
-        txId: m.token.txid,
-        outputIndex: m.token.outputIndex,
-        script: m.token.lockingScript,
-        satoshis: m.token.satoshis
-      })
-      bsvtx.addOutput(new bsv.Transaction.Output({
-        script: nextScript,
-        satoshis: m.token.satoshis
-      }))
-      self.to = { tx: bsvtx, inputIndex: 0 }
-      self.from = { tx: parsedFromTx, outputIndex: 0 }
-        ; (self as MeterContract).decrementOnChain()
-    })
-    console.log('Got unlocking script', unlockingScript)
-    const broadcastActionParams = {
-      inputs: {
-        [m.token.txid]: {
-          ...m.token,
-          rawTx: m.token.rawTX,
-          outputsToRedeem: [{
-            index: m.token.outputIndex,
-            unlockingScript: unlockingScript.toHex(),
-            spendingDescription: 'Previous counter token'
-          }]
-        }
-      },
-      outputs: [{
-        script: nextScript.toHex(),
-        satoshis: m.token.satoshis,
-        description: 'counter token'
-      }],
-      description: `Decrement a counter`,
-      acceptDelayedBroadcast: false
-    }
-    let currentTX = await createAction(broadcastActionParams)
-    const beefTx = toBEEFfromEnvelope(currentTX as EnvelopeEvidenceApi)
-    // Send the transaction to the overlay network
-    const broadcastResult = await beefTx.tx.broadcast(new SHIPBroadcaster(['tm_meter']))
-    console.log(broadcastResult)
-
-    setMeters((originalMeters) => {
-      const copy = [...originalMeters]
-      copy[meterIndex].value--
-      return copy
-    })
-  }
-
-  // Handle increment
   const handleIncrement = async (meterIndex: number) => {
-    // Spend the token and create a neww transaction
-    const m = meters[meterIndex]
-    const meter = MeterContract.fromLockingScript(m.token.lockingScript)
-    const nextMeter = MeterContract.fromLockingScript(m.token.lockingScript) as MeterContract
-    nextMeter.increment()
-    const nextScript = nextMeter.lockingScript
-    const parsedFromTx = new bsv.Transaction(m.token.rawTX)
-    const unlockingScript = await meter.getUnlockingScript(async (self) => {
-      const bsvtx = new bsv.Transaction()
-      bsvtx.from({
-        txId: m.token.txid,
-        outputIndex: m.token.outputIndex,
-        script: m.token.lockingScript,
-        satoshis: m.token.satoshis
-      })
-      bsvtx.addOutput(new bsv.Transaction.Output({
-        script: nextScript,
-        satoshis: m.token.satoshis
-      }))
-      self.to = { tx: bsvtx, inputIndex: 0 }
-      self.from = { tx: parsedFromTx, outputIndex: 0 }
-        ; (self as MeterContract).incrementOnChain()
-    })
-    console.log('Got unlocking script', unlockingScript)
-    const broadcastActionParams = {
-      inputs: {
-        [m.token.txid]: {
-          ...m.token,
-          rawTx: m.token.rawTX,
-          outputsToRedeem: [{
-            index: m.token.outputIndex,
-            unlockingScript: unlockingScript.toHex(),
-            spendingDescription: 'Previous counter token'
-          }]
-        }
-      },
-      outputs: [{
-        script: nextScript.toHex(),
-        satoshis: m.token.satoshis,
-        description: 'counter token'
-      }],
-      description: `Increment a counter`,
-      acceptDelayedBroadcast: false
-    }
-    let currentTX = await createAction(broadcastActionParams)
-    const beefTx = toBEEFfromEnvelope(currentTX as EnvelopeEvidenceApi)
-    // Send the transaction to the overlay network
-    const broadcastResult = await beefTx.tx.broadcast(new SHIPBroadcaster(['tm_meter']))
-    console.log(broadcastResult)
+    try {
+      const walletClient = new WalletClient('json-api', 'non-admin.com')
 
-    setMeters((originalMeters) => {
-      const copy = [...originalMeters]
-      copy[meterIndex].value++
-      return copy
-    })
+      // Validate meter index
+      if (meterIndex < 0 || meterIndex >= meters.length) {
+        throw new Error(`Invalid meter index: ${meterIndex}`)
+      }
+
+      const meter = meters[meterIndex]
+
+      // Ensure token data is available before proceeding
+      if (
+        !meter?.token?.rawTX ||
+        !meter.token.lockingScript ||
+        !meter.token.txid
+      ) {
+        throw new Error(
+          `Missing required token data for meter index ${meterIndex}`
+        )
+      }
+
+      // Create Meter Contract instances
+      const meterContract = MeterContract.fromLockingScript(
+        meter.token.lockingScript
+      )
+      const nextMeter = MeterContract.fromLockingScript(
+        meter.token.lockingScript
+      ) as MeterContract
+      nextMeter.increment()
+      const nextScript = nextMeter.lockingScript
+
+      // Convert rawTX to Atomic BEEF format
+      const atomicBeef = Utils.toArray(meter.token.rawTX, 'hex')
+      const tx = Transaction.fromAtomicBEEF(atomicBeef)
+
+      // Create a BSV Transaction for sCrypt Smart Contract usage
+      const parsedFromTx = new bsv.Transaction(tx.toHex())
+
+      // Generate unlocking script
+      const unlockingScript = await meterContract.getUnlockingScript(
+        async self => {
+          const bsvtx = new bsv.Transaction()
+          bsvtx.from({
+            txId: meter.token.txid,
+            outputIndex: meter.token.outputIndex,
+            script: meter.token.lockingScript,
+            satoshis: meter.token.satoshis
+          })
+          bsvtx.addOutput(
+            new bsv.Transaction.Output({
+              script: nextScript,
+              satoshis: meter.token.satoshis
+            })
+          )
+          self.to = { tx: bsvtx, inputIndex: 0 }
+          self.from = { tx: parsedFromTx, outputIndex: 0 }
+          ;(self as MeterContract).incrementOnChain()
+        }
+      )
+
+      // Prepare broadcast parameters
+      const broadcastActionParams: CreateActionArgs = {
+        inputs: [
+          {
+            inputDescription: 'Increment meter token',
+            outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
+            unlockingScript: unlockingScript.toHex()
+          }
+        ],
+        inputBEEF: atomicBeef,
+        outputs: [
+          {
+            basket: 'meter tokens',
+            lockingScript: nextScript.toHex(),
+            satoshis: meter.token.satoshis,
+            outputDescription: 'Counter token'
+          }
+        ],
+        description: `Increment a counter`,
+        options: { acceptDelayedBroadcast: false, randomizeOutputs: false }
+      }
+
+      // Create Action for Meter Increment
+      const newMeterToken = await walletClient.createAction(
+        broadcastActionParams
+      )
+
+      if (!newMeterToken.tx) {
+        throw new Error(
+          'Transaction creation failed: newMeterToken.tx is undefined'
+        )
+      }
+
+      // Convert to Transaction format
+      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
+      const txid = transaction.id('hex')
+
+      // Configure SHIP Broadcaster with allowHTTP set to true
+      const facilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
+      facilitator.allowHTTP = true // Manually override in case constructor ignores it
+
+      const args: SHIPBroadcasterConfig = {
+        networkPreset: 'local',
+        facilitator,
+        requireAcknowledgmentFromAnyHostForTopics: 'any'
+      }
+      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
+
+      console.log('handleIncrement: broadcaster:', broadcaster)
+
+      // Broadcast the transaction
+      const broadcasterResult = await broadcaster.broadcast(transaction)
+
+      console.log('broadcasterResult.txid:', broadcasterResult.txid)
+      if (broadcasterResult.status === 'error') {
+        console.error(
+          'broadcasterResult.description:',
+          broadcasterResult.description
+        )
+        //throw new Error('Transaction failed to broadcast')
+      }
+      //console.log('broadcasterResult.message:', broadcasterResult.message)
+
+      // Update state with new meter transaction details
+      setMeters(originalMeters => {
+        const copy = [...originalMeters]
+        copy[meterIndex] = {
+          ...copy[meterIndex],
+          value: copy[meterIndex].value + 1,
+          token: {
+            rawTX: Utils.toHex(newMeterToken.tx!),
+            txid,
+            outputIndex: 0,
+            lockingScript: nextScript.toHex(),
+            satoshis: meter.token.satoshis
+          } as Token
+        }
+        return copy
+      })
+    } catch (error) {
+      console.error('Error in meter increment:', (error as Error).message)
+      throw new Error(`Meter increment failed: ${(error as Error).message}`)
+    }
   }
 
-  // The rest of this file just contains some UI code. All the juicy
-  // Bitcoin - related stuff is above.
+  const handleDecrement = async (meterIndex: number) => {
+    try {
+      const walletClient = new WalletClient('json-api', 'non-admin.com')
 
-  // ----------
+      // Validate meter index
+      if (meterIndex < 0 || meterIndex >= meters.length) {
+        throw new Error(`Invalid meter index: ${meterIndex}`)
+      }
+
+      const meter = meters[meterIndex]
+
+      // Ensure token data is available before proceeding
+      if (
+        !meter?.token?.rawTX ||
+        !meter.token.lockingScript ||
+        !meter.token.txid
+      ) {
+        throw new Error(
+          `Missing required token data for meter index ${meterIndex}`
+        )
+      }
+
+      // Create Meter Contract instances
+      const meterContract = MeterContract.fromLockingScript(
+        meter.token.lockingScript
+      )
+      const nextMeter = MeterContract.fromLockingScript(
+        meter.token.lockingScript
+      ) as MeterContract
+      nextMeter.decrement()
+      const nextScript = nextMeter.lockingScript
+
+      // Convert rawTX to Atomic BEEF format
+      const atomicBeef = Utils.toArray(meter.token.rawTX, 'hex')
+      const tx = Transaction.fromAtomicBEEF(atomicBeef)
+
+      // Create a BSV Transaction for sCrypt Smart Contract usage
+      const parsedFromTx = new bsv.Transaction(tx.toHex())
+
+      // Generate unlocking script
+      const unlockingScript = await meterContract.getUnlockingScript(
+        async self => {
+          const bsvtx = new bsv.Transaction()
+          bsvtx.from({
+            txId: meter.token.txid,
+            outputIndex: meter.token.outputIndex,
+            script: meter.token.lockingScript,
+            satoshis: meter.token.satoshis
+          })
+          bsvtx.addOutput(
+            new bsv.Transaction.Output({
+              script: nextScript,
+              satoshis: meter.token.satoshis
+            })
+          )
+          self.to = { tx: bsvtx, inputIndex: 0 }
+          self.from = { tx: parsedFromTx, outputIndex: 0 }
+          ;(self as MeterContract).decrementOnChain()
+        }
+      )
+
+      // Prepare broadcast parameters
+      const broadcastActionParams: CreateActionArgs = {
+        inputs: [
+          {
+            inputDescription: 'Decrement meter token',
+            outpoint: `${meter.token.txid}.${meter.token.outputIndex}`,
+            unlockingScript: unlockingScript.toHex()
+          }
+        ],
+        inputBEEF: atomicBeef,
+        outputs: [
+          {
+            basket: 'meter tokens',
+            lockingScript: nextScript.toHex(),
+            satoshis: meter.token.satoshis,
+            outputDescription: 'Counter token'
+          }
+        ],
+        description: `Decrement a counter`,
+        options: { acceptDelayedBroadcast: false, randomizeOutputs: false }
+      }
+
+      // Create Action for Meter Decrement
+      const newMeterToken = await walletClient.createAction(
+        broadcastActionParams
+      )
+
+      if (!newMeterToken.tx) {
+        throw new Error(
+          'Transaction creation failed: newMeterToken.tx is undefined'
+        )
+      }
+
+      // Convert to Transaction format
+      const transaction = Transaction.fromAtomicBEEF(newMeterToken.tx)
+      const txid = transaction.id('hex')
+
+      // Configure SHIP Broadcaster with allowHTTP set to true
+      const facilitator = new HTTPSOverlayBroadcastFacilitator(fetch, true)
+      facilitator.allowHTTP = true // Manually override in case constructor ignores it
+
+      const args: SHIPBroadcasterConfig = {
+        networkPreset: 'local',
+        facilitator,
+        requireAcknowledgmentFromAnyHostForTopics: 'any'
+      }
+      const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
+
+      console.log('handleDecrement: broadcaster:', broadcaster)
+
+      // Broadcast the transaction
+      const broadcasterResult = await broadcaster.broadcast(transaction)
+
+      console.log('broadcasterResult.txid:', broadcasterResult.txid)
+      if (broadcasterResult.status === 'error') {
+        console.error(
+          'broadcasterResult.description:',
+          broadcasterResult.description
+        )
+        //throw new Error('Transaction failed to broadcast')
+      }
+      //console.log('broadcasterResult.message:', broadcasterResult.message)
+
+      // Update state with new meter transaction details
+      setMeters(originalMeters => {
+        const copy = [...originalMeters]
+        copy[meterIndex] = {
+          ...copy[meterIndex],
+          value: copy[meterIndex].value - 1,
+          token: {
+            rawTX: Utils.toHex(newMeterToken.tx!),
+            txid,
+            outputIndex: 0,
+            lockingScript: nextScript.toHex(),
+            satoshis: meter.token.satoshis
+          } as Token
+        }
+        return copy
+      })
+    } catch (error) {
+      console.error('Error in meter decrement:', (error as Error).message)
+      throw new Error(`Meter decrement failed: ${(error as Error).message}`)
+    }
+  }
 
   return (
     <>
       <ToastContainer
-        position='top-right'
+        position="top-right"
         autoClose={5000}
         hideProgressBar={false}
         newestOnTop={false}
@@ -318,12 +577,16 @@ const App: React.FC = () => {
         draggable
         pauseOnHover
       />
-      <AppBar position='static'>
+      <AppBar position="static">
         <Toolbar>
-          <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Meter — Counters, Up and Down.
           </Typography>
-          <GitHubIconStyle onClick={() => window.open('https://github.com/p2ppsr/meter', '_blank')}>
+          <GitHubIconStyle
+            onClick={() =>
+              window.open('https://github.com/p2ppsr/meter', '_blank')
+            }
+          >
             <GitHubIcon />
           </GitHubIconStyle>
         </Toolbar>
@@ -331,71 +594,123 @@ const App: React.FC = () => {
       <AppBarPlaceholder />
 
       {meters.length >= 1 && (
-        <AddMoreFab color='primary' onClick={() => { setCreateOpen(true) }}>
+        <AddMoreFab
+          color="primary"
+          onClick={() => {
+            setCreateOpen(true)
+          }}
+        >
           <AddIcon />
         </AddMoreFab>
       )}
 
-      {metersLoading
-        ? (<LoadingBar />)
-        : (
+      {metersLoading ? (
+        <LoadingBar />
+      ) : (
+        <List>
+          {meters.length === 0 && (
+            <NoItems
+              container
+              direction="column"
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Grid item align="center">
+                <Typography variant="h4">No Meters</Typography>
+                <Typography color="textSecondary">
+                  Use the button below to start a meter
+                </Typography>
+              </Grid>
+              <Grid
+                item
+                align="center"
+                sx={{ paddingTop: '2.5em', marginBottom: '1em' }}
+              >
+                <Fab
+                  color="primary"
+                  onClick={() => {
+                    setCreateOpen(true)
+                  }}
+                >
+                  <AddIcon />
+                </Fab>
+              </Grid>
+            </NoItems>
+          )}
           <List>
-            {meters.length === 0 && (
-              <NoItems container direction='column' justifyContent='center' alignItems='center'>
-                <Grid item align='center'>
-                  <Typography variant='h4'>No Meters</Typography>
-                  <Typography color='textSecondary'>
-                    Use the button below to start a meter
-                  </Typography>
-                </Grid>
-                <Grid item align='center' sx={{ paddingTop: '2.5em', marginBottom: '1em' }}>
-                  <Fab color='primary' onClick={() => { setCreateOpen(true) }}>
-                    <AddIcon />
-                  </Fab>
-                </Grid>
-              </NoItems>
-            )}
-            {meters.map((x, i) => (
+            {meters.map((meter, i) => (
               <ListItem key={i}>
-                <Button onClick={() => handleDecrement(i)}>Decrement</Button>
-                <Typography>{x.value}</Typography>
-                <Button onClick={() => handleIncrement(i)}>Increment</Button>
-                <IdentityCard
-                  themeMode='dark'
-                  identityKey={x.creatorIdentityKey}
-                />
+                <Card sx={{ width: '100%', textAlign: 'center', padding: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6">
+                      Meter Value: {meter.value}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleIncrement(i)}
+                    >
+                      +
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleDecrement(i)}
+                    >
+                      -
+                    </Button>
+                    <Typography variant="subtitle2" sx={{ marginTop: 1 }}>
+                      Identity Key:
+                    </Typography>
+                    <Typography variant="body2">
+                      {meter.creatorIdentityKey}
+                    </Typography>
+                  </CardContent>
+                </Card>
               </ListItem>
             ))}
           </List>
-        )
-      }
+        </List>
+      )}
 
-      <Dialog open={createOpen} onClose={() => { setCreateOpen(false) }}>
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          void (async () => {
-            try {
-              await handleCreateSubmit(e)
-            } catch (error) {
-              console.error('Error in form submission:', error)
-            }
-          })()
-        }}>
+      <Dialog
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false)
+        }}
+      >
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            void (async () => {
+              try {
+                await handleCreateSubmit(e)
+              } catch (error) {
+                console.error('Error in form submission:', error)
+              }
+            })()
+          }}
+        >
           <DialogTitle>Create a Meter</DialogTitle>
           <DialogContent>
             <DialogContentText paragraph>
               Meters can be incremented and decremented after creation.
             </DialogContentText>
           </DialogContent>
-          {createLoading
-            ? (<LoadingBar />)
-            : (
-              <DialogActions>
-                <Button onClick={() => { setCreateOpen(false) }}>Cancel</Button>
-                <Button type='submit'>OK</Button>
-              </DialogActions>
-            )
-          }
+          {createLoading ? (
+            <LoadingBar />
+          ) : (
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setCreateOpen(false)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">OK</Button>
+            </DialogActions>
+          )}
         </form>
       </Dialog>
     </>

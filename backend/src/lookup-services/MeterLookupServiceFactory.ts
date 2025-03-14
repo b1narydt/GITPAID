@@ -1,8 +1,13 @@
-import { LookupService, LookupQuestion, LookupAnswer, LookupFormula } from '@bsv/overlay'
+import {
+  LookupService,
+  LookupQuestion,
+  LookupAnswer,
+  LookupFormula
+} from '@bsv/overlay'
 import { MeterStorage } from './MeterStorage.js'
 import { Script, Utils } from '@bsv/sdk'
 import docs from './MeterLookupDocs.md.js'
-import meterContractJson from '../../artifacts/Meter.json' with { type: "json" }
+import meterContractJson from '../../artifacts/Meter.json' with { type: 'json' }
 import { MeterContract } from '../contracts/Meter.js'
 import { Db } from 'mongodb'
 MeterContract.loadArtifact(meterContractJson)
@@ -19,7 +24,7 @@ class MeterLookupService implements LookupService {
    * Constructs a new MeterLookupService instance
    * @param storage - The storage instance to use for managing records
    */
-  constructor(public storage: MeterStorage) { }
+  constructor(public storage: MeterStorage) {}
 
   /**
    * Notifies the lookup service of a new output added.
@@ -32,15 +37,24 @@ class MeterLookupService implements LookupService {
    * @returns {Promise<void>} A promise that resolves when the processing is complete.
    * @throws Will throw an error if there is an issue with storing the record in the storage engine.
    */
-  async outputAdded?(txid: string, outputIndex: number, outputScript: Script, topic: string): Promise<void> {
+  async outputAdded?(
+    txid: string,
+    outputIndex: number,
+    outputScript: Script,
+    topic: string
+  ): Promise<void> {
     if (topic !== 'tm_meter') return
     try {
       // Decode the Meter token fields from the Bitcoin outputScript with the contract class
-      const meter = MeterContract.fromLockingScript(outputScript.toHex()) as MeterContract
+      const meter = MeterContract.fromLockingScript(
+        outputScript.toHex()
+      ) as MeterContract
 
       // Parse out the message field
       const value = Number(meter.count)
-      const creatorIdentityKey = Utils.toHex(Utils.toArray(meter.creatorIdentityKey, 'utf8'))
+      const creatorIdentityKey = Utils.toHex(
+        Utils.toArray(meter.creatorIdentityKey, 'utf8')
+      )
 
       // Store the token fields for future lookup
       await this.storage.storeRecord(
@@ -61,7 +75,11 @@ class MeterLookupService implements LookupService {
    * @param outputIndex - The index of the spent output
    * @param topic - The topic associated with the spent output
    */
-  async outputSpent?(txid: string, outputIndex: number, topic: string): Promise<void> {
+  async outputSpent?(
+    txid: string,
+    outputIndex: number,
+    topic: string
+  ): Promise<void> {
     if (topic !== 'tm_meter') return
     await this.storage.deleteRecord(txid, outputIndex)
   }
@@ -72,7 +90,11 @@ class MeterLookupService implements LookupService {
    * @param outputIndex - The index of the deleted output
    * @param topic - The topic associated with the deleted output
    */
-  async outputDeleted?(txid: string, outputIndex: number, topic: string): Promise<void> {
+  async outputDeleted?(
+    txid: string,
+    outputIndex: number,
+    topic: string
+  ): Promise<void> {
     if (topic !== 'tm_meter') return
     await this.storage.deleteRecord(txid, outputIndex)
   }
@@ -82,7 +104,9 @@ class MeterLookupService implements LookupService {
    * @param question - The lookup question to be answered
    * @returns A promise that resolves to a lookup answer or formula
    */
-  async lookup(question: LookupQuestion): Promise<LookupAnswer | LookupFormula> {
+  async lookup(
+    question: LookupQuestion
+  ): Promise<LookupAnswer | LookupFormula> {
     if (question.query === undefined || question.query === null) {
       throw new Error('A valid query must be provided!')
     }
@@ -90,11 +114,16 @@ class MeterLookupService implements LookupService {
       throw new Error('Lookup service not supported!')
     }
 
-    if (question.query === 'findAll') {
-      return await this.storage.findAll()
-    } else {
-      throw new Error('Unknown query type')
+    const query = question.query as {
+      txid?: string
+      creatorIdentityKey?: string
+      findAll?: boolean
     }
+    if (query.findAll) {
+      return await this.storage.findAll()
+    }
+    const mess = JSON.stringify(question, null, 2)
+    throw new Error(`question.query:${mess}}`)
   }
 
   /**
