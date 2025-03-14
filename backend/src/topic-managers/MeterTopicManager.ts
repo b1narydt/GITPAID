@@ -21,9 +21,6 @@ export default class MeterTopicManager implements TopicManager {
     beef: number[],
     previousCoins: number[]
   ): Promise<AdmittanceInstructions> {
-    const beefStr = JSON.stringify(beef, null, 2)
-    throw new Error(`topicManager:beef:${beefStr}}`)
-
     const outputsToAdmit: number[] = []
     try {
       const parsedTransaction = Transaction.fromBEEF(beef)
