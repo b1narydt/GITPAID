@@ -38,8 +38,6 @@ MeterContract.loadArtifact(MeterArtifact)
 import { bsv, toByteString } from 'scrypt-ts'
 import { Card } from '@mui/material'
 import { CardContent } from '@mui/material'
-import { ListOutputsArgs } from '@bsv/sdk/dist/types/src/wallet'
-import { AtomicBEEF } from '@bsv/sdk/dist/types/src/wallet/Wallet.interfaces'
 import { CreateActionArgs } from '@babbage/sdk-ts/out/src/sdk'
 
 // Only used to verify signature
@@ -156,7 +154,7 @@ const App: React.FC = () => {
       // Update the meters state with the new transaction
       setMeters(originalMeters => [
         {
-          value: 0,
+          value: 1,
           creatorIdentityKey: publicKey,
           token: {
             rawTX: Utils.toHex(newMeterToken.tx!),
@@ -213,8 +211,9 @@ const App: React.FC = () => {
         for (const result of lookupResult.outputs) {
           try {
             const tx = Transaction.fromBEEF(result.beef)
-            const script =
-              tx.outputs[Number(result.outputIndex)].lockingScript.toHex()
+            const script = tx.outputs[
+              Number(result.outputIndex)
+            ].lockingScript.toHex()
             const meter = MeterContract.fromLockingScript(
               script
             ) as MeterContract
