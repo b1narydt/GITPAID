@@ -43,6 +43,9 @@ import { CreateActionArgs } from '@babbage/sdk-ts/out/src/sdk'
 // Only used to verify signature
 const anyoneWallet = new ProtoWallet('anyone')
 
+// Local wallet
+const walletClient = new WalletClient()
+
 // These are some basic styling rules for the React application.
 // We are using MUI (https://mui.com) for all of our UI components (i.e. buttons and dialogs etc.).
 const AppBarPlaceholder = styled('div')({
@@ -86,9 +89,6 @@ const App: React.FC = () => {
     e.preventDefault()
     try {
       setCreateLoading(true)
-
-      const walletClient = new WalletClient('json-api', 'non-admin.com')
-
       const publicKey = (await walletClient.getPublicKey({ identityKey: true }))
         .publicKey
 
@@ -134,23 +134,12 @@ const App: React.FC = () => {
         networkPreset: 'local'
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
-      console.log('handleCreateSubmit:broadcaster:', broadcaster)
-      debugger
       const broadcasterResult = await broadcaster.broadcast(transaction)
-
-      console.log('broadcasterResult.txid:', broadcasterResult.txid)
+      console.log('broadcasterResult:', broadcasterResult)
       if (broadcasterResult.status === 'error') {
-        console.error(
-          'broadcasterResult.description:',
-          broadcasterResult.description
-        )
-        //throw new Error('Transaction failed to broadcast')
+        throw new Error('Transaction failed to broadcast')
       }
-      //console.log('broadcasterResult.message:', broadcasterResult.message)
-
       toast.dark('Meter successfully created!')
-
-      // Update the meters state with the new transaction
       setMeters(originalMeters => [
         {
           value: 1,
@@ -181,9 +170,6 @@ const App: React.FC = () => {
 
         try {
           const resolver = new LookupResolver({ networkPreset: 'local' })
-          console.log('Resolver Object:', resolver)
-
-          // Perform the query and store the result
           lookupResult = await resolver.query({
             service: 'ls_meter',
             query: { findAll: true }
@@ -272,8 +258,6 @@ const App: React.FC = () => {
 
   const handleIncrement = async (meterIndex: number) => {
     try {
-      const walletClient = new WalletClient('json-api', 'non-admin.com')
-
       // Validate meter index
       if (meterIndex < 0 || meterIndex >= meters.length) {
         throw new Error(`Invalid meter index: ${meterIndex}`)
@@ -418,8 +402,6 @@ const App: React.FC = () => {
 
   const handleDecrement = async (meterIndex: number) => {
     try {
-      const walletClient = new WalletClient('json-api', 'non-admin.com')
-
       // Validate meter index
       if (meterIndex < 0 || meterIndex >= meters.length) {
         throw new Error(`Invalid meter index: ${meterIndex}`)
