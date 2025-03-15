@@ -131,12 +131,11 @@ const App: React.FC = () => {
       const txid = transaction.id('hex')
 
       const args: SHIPBroadcasterConfig = {
-        networkPreset: 'local',
-        facilitator: new HTTPSOverlayBroadcastFacilitator(fetch, true),
-        requireAcknowledgmentFromAnyHostForTopics: 'any' // Accept acknowledgment from any host
+        networkPreset: 'local'
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
       console.log('handleCreateSubmit:broadcaster:', broadcaster)
+      debugger
       const broadcasterResult = await broadcaster.broadcast(transaction)
 
       console.log('broadcasterResult.txid:', broadcasterResult.txid)
@@ -328,7 +327,7 @@ const App: React.FC = () => {
           )
           self.to = { tx: bsvtx, inputIndex: 0 }
           self.from = { tx: parsedFromTx, outputIndex: 0 }
-          ;(self as MeterContract).incrementOnChain()
+            ; (self as MeterContract).incrementOnChain()
         }
       )
 
@@ -474,7 +473,7 @@ const App: React.FC = () => {
           )
           self.to = { tx: bsvtx, inputIndex: 0 }
           self.from = { tx: parsedFromTx, outputIndex: 0 }
-          ;(self as MeterContract).decrementOnChain()
+            ; (self as MeterContract).decrementOnChain()
         }
       )
 
