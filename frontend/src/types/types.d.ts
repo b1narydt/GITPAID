@@ -1,7 +1,7 @@
 declare module 'react-toastify'
 
 export interface Token {
-  rawTX: HexString
+  atomicBeefTX: HexString
   txid: TXIDHexString
   outputIndex: PositiveIntegerOrZero
   lockingScript: HexString

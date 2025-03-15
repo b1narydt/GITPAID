@@ -157,7 +157,7 @@ const App: React.FC = () => {
           value: 1,
           creatorIdentityKey: publicKey,
           token: {
-            rawTX: Utils.toHex(newMeterToken.tx!),
+            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
             txid,
             outputIndex: 0,
             lockingScript: lockingScript,
@@ -238,15 +238,15 @@ const App: React.FC = () => {
               throw new Error('Signature invalid')
             }
 
-            const rawTX = Utils.toHex(tx.toBEEF())
+            const atomicBeefTX = Utils.toHex(tx.toBEEF())
 
-            console.log('fetchMeters Transaction rawTX:', rawTX)
+            console.log('fetchMeters Transaction atomicBeefTX:', atomicBeefTX)
 
             parsedResults.push({
               value: Number(meter.count),
               creatorIdentityKey: String(meter.creatorIdentityKey),
               token: {
-                rawTX,
+                atomicBeefTX,
                 txid: tx.id('hex'),
                 outputIndex: result.outputIndex,
                 lockingScript: script,
@@ -284,7 +284,7 @@ const App: React.FC = () => {
 
       // Ensure token data is available before proceeding
       if (
-        !meter?.token?.rawTX ||
+        !meter?.token?.atomicBeefTX ||
         !meter.token.lockingScript ||
         !meter.token.txid
       ) {
@@ -303,8 +303,8 @@ const App: React.FC = () => {
       nextMeter.increment()
       const nextScript = nextMeter.lockingScript
 
-      // Convert rawTX to Atomic BEEF format
-      const atomicBeef = Utils.toArray(meter.token.rawTX, 'hex')
+      // Convert from hex string
+      const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
       const tx = Transaction.fromAtomicBEEF(atomicBeef)
 
       // Create a BSV Transaction for sCrypt Smart Contract usage
@@ -402,7 +402,7 @@ const App: React.FC = () => {
           ...copy[meterIndex],
           value: copy[meterIndex].value + 1,
           token: {
-            rawTX: Utils.toHex(newMeterToken.tx!),
+            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
             txid,
             outputIndex: 0,
             lockingScript: nextScript.toHex(),
@@ -430,7 +430,7 @@ const App: React.FC = () => {
 
       // Ensure token data is available before proceeding
       if (
-        !meter?.token?.rawTX ||
+        !meter?.token?.atomicBeefTX ||
         !meter.token.lockingScript ||
         !meter.token.txid
       ) {
@@ -449,8 +449,8 @@ const App: React.FC = () => {
       nextMeter.decrement()
       const nextScript = nextMeter.lockingScript
 
-      // Convert rawTX to Atomic BEEF format
-      const atomicBeef = Utils.toArray(meter.token.rawTX, 'hex')
+      // Convert from hex string
+      const atomicBeef = Utils.toArray(meter.token.atomicBeefTX, 'hex')
       const tx = Transaction.fromAtomicBEEF(atomicBeef)
 
       // Create a BSV Transaction for sCrypt Smart Contract usage
@@ -548,7 +548,7 @@ const App: React.FC = () => {
           ...copy[meterIndex],
           value: copy[meterIndex].value - 1,
           token: {
-            rawTX: Utils.toHex(newMeterToken.tx!),
+            atomicBeefTX: Utils.toHex(newMeterToken.tx!),
             txid,
             outputIndex: 0,
             lockingScript: nextScript.toHex(),

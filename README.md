@@ -4,7 +4,7 @@ If you have problems accessing hosts:
 
 Try using your browser with a command switch. Ensure you use a temporary profile if you do disable your security settings.
 
-For Linux 
+For Linux:
 `brave-browser --disable-web-security --user-data-dir="/tmp/brave_dev"`
 
 # BSV Project
