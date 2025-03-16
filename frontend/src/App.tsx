@@ -223,7 +223,7 @@ const App: React.FC = () => {
               throw new Error('Signature invalid')
             }
 
-            const atomicBeefTX = Utils.toHex(tx.toBEEF())
+            const atomicBeefTX = Utils.toHex(tx.toAtomicBEEF())
 
             console.log('fetchMeters Transaction atomicBeefTX:', atomicBeefTX)
 
