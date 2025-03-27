@@ -11,37 +11,35 @@
     }
   },
   "frontend": {
-    "language": "react",
-    "sourceDirectory": "./frontend"
+    "type": "react",
+    "directory": "./frontend"
   },
   "contracts": {
-    "language": "sCrypt",
-    "baseDirectory": "./backend"
+    "directory": "./backend/src/contracts",
+    "compilerVersion": "1.14.0",
+    "compilerOptions": {
+      "desc": true,
+      "hex": true,
+      "asm": true,
+      "artifact": true,
+      "optimize": true,
+      "outputFile": "compiledResult.json"
+    }
   },
   "configs": [
     {
-      "name": "Local LARS",
-      "network": "mainnet",
-      "provider": "LARS",
-      "run": ["backend", "frontend"]
+      "type": "lars",
+      "name": "local",
+      "description": "Local development setup",
+      "publicUrl": "https://localhost:8080",
+      "port": 8080,
+      "enableGASPSync": false
     },
     {
-      "name": "atx",
-      "provider": "CARS",
-      "CARSCloudURL": "https://cars.atx.systems",
-      "projectID": "28aa5632cc9f2974234bba40ff00f20d",
-      "network": "mainnet",
-      "deploy": ["frontend", "backend"],
-      "frontendHostingMethod": "HTTPS"
-    },
-    {
-      "name": "babbage",
-      "provider": "CARS",
-      "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "161a4f0f091010a0f8a34a5d1d1b9dd7",
-      "network": "mainnet",
-      "deploy": ["frontend", "backend"],
-      "frontendHostingMethod": "HTTPS"
+      "type": "cars",
+      "name": "production",
+      "description": "Cloud deployment configuration",
+      "publicUrl": "https://bounty-app.bsv.dev"
     }
   ]
 }

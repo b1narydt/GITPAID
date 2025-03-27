@@ -1,4 +1,4 @@
-export { BountyContract } from './src/contracts/bountyescrow.js'
+export { BountyContract } from './src/contracts/BountyContract.js'
 export { default as MeterArtifact } from './artifacts/Meter.json'
 export { default as MeterLookupServiceFactory } from './src/lookup-services/BountyLookupServiceFactory.js'
 export { default as MeterTemplate } from './src/script-templates/MeterTemplate.js'

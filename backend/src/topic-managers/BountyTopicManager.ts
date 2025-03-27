@@ -1,16 +1,17 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
 import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
-import docs from './MeterTopicDocs.md.js'
-import meterContractJson from '../../artifacts/Meter.json' with { type: 'json' }
-import { MeterContract } from '../contracts/Meter.js'
-MeterContract.loadArtifact(meterContractJson)
+import docs from './BountyTopicDocs.md.js'
+import bountyContractJson from '../../artifacts/Bounty.json' with { type: 'json' }
+import { BountyContract } from '../contracts/BountyContract.js'
+BountyContract.loadArtifact(bountyContractJson)
 
+// Create a wallet for verification purposes
 const anyoneWallet = new ProtoWallet('anyone')
 
 /**
- *  Note: The PushDrop package is used to decode BRC-48 style Pay-to-Push-Drop tokens.
+ * Topic Manager for Bounty contracts
  */
-export default class MeterTopicManager implements TopicManager {
+export default class BountyTopicManager implements TopicManager {
   /**
    * Identify if the outputs are admissible depending on the particular protocol requirements
    * @param beef - The transaction data in BEEF format
@@ -30,37 +31,46 @@ export default class MeterTopicManager implements TopicManager {
         try {
           // Parse sCrypt locking script
           const script = output.lockingScript.toHex()
-          // Ensure Meter can be constructed from script
-          const meter = MeterContract.fromLockingScript(script) as MeterContract
-          console.log(meter)
-          // This is where other overlay-level validation rules would be enforced
-          // Verify creator signature came from creator public key
+          
+          // Ensure BountyContract can be constructed from script
+          const bounty = BountyContract.fromLockingScript(script) as BountyContract
+          
+          // Verify creator signature came from creator identity key
           const verifyResult = await anyoneWallet.verifySignature({
-            protocolID: [0, 'meter'],
+            protocolID: [0, 'bounty'],
             keyID: '1',
-            counterparty: meter.creatorIdentityKey,
+            counterparty: bounty.creatorIdentityKey,
             data: [1],
-            signature: Utils.toArray(meter.creatorSignature, 'hex')
+            signature: Utils.toArray(bounty.creatorSignature, 'hex')
           })
-          console.log(verifyResult)
+          
           if (verifyResult.valid !== true) {
-            throw new Error('Signature invalid')
+            console.warn('Signature validation failed for output', i)
+            continue
           }
-
+          
+          // Additional validation could be added here:
+          // - Verify issueId format (valid GitHub issue format)
+          // - Validate deadline is reasonable
+          // - Check minimum bounty amount threshold
+          
+          // Add the validated bounty output to admitted list
           outputsToAdmit.push(i)
+          console.log(`Admitted bounty output at index ${i}`)
         } catch (error) {
-          // Continue processing other outputs
+          // This output is not a valid bounty contract, skip it
+          console.debug(`Output ${i} is not a bounty contract: ${error.message}`)
           continue
         }
       }
+      
       if (outputsToAdmit.length === 0) {
-        console.warn('No outputs admitted!')
-        // throw new ERR_BAD_REQUEST('No outputs admitted!')
+        console.warn('No bounty outputs admitted in transaction')
       }
     } catch (error) {
-      const beefStr = JSON.stringify(beef, null, 2)
+      const beefStr = JSON.stringify(beef.slice(0, 100), null, 2) + '...' // Trim for logging
       throw new Error(
-        `topicManager:Error:identifying admissible outputs:${error} beef:${beefStr}}`
+        `BountyTopicManager: Error identifying admissible outputs: ${error.message} beef: ${beefStr}`
       )
     }
 
@@ -81,7 +91,6 @@ export default class MeterTopicManager implements TopicManager {
   /**
    * Get metadata about the topic manager
    * @returns A promise that resolves to an object containing metadata
-   * @throws An error indicating the method is not implemented
    */
   async getMetaData(): Promise<{
     name: string
@@ -91,8 +100,10 @@ export default class MeterTopicManager implements TopicManager {
     informationURL?: string
   }> {
     return {
-      name: 'Meter Topic Manager',
-      shortDescription: 'Meters, up and down.'
+      name: 'Bounty Topic Manager',
+      shortDescription: 'Tracks GitHub issue bounties on the BSV blockchain',
+      version: '1.0.0',
+      informationURL: 'https://github.com/example/bounty-system'
     }
   }
 }
