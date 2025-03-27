@@ -44,7 +44,7 @@ export class BountyContract extends SmartContract {
 
     // Repository approvers public keys (typically just the repo owner)
     @prop()
-    readonly approvers: FixedArray<PubKey, typeof BountyEscrow.N_APPROVERS>
+    readonly approvers: FixedArray<PubKey, typeof BountyContract.N_APPROVERS>
 
     // Contract deadline (timestamp or block height)
     @prop()
@@ -56,7 +56,7 @@ export class BountyContract extends SmartContract {
         contributorAddr: Addr,
         issueId: ByteString,
         prId: ByteString,
-        approvers: FixedArray<PubKey, typeof BountyEscrow.N_APPROVERS>,
+        approvers: FixedArray<PubKey, typeof BountyContract.N_APPROVERS>,
         deadline: bigint
     ) {
         super(...arguments)
@@ -75,7 +75,7 @@ export class BountyContract extends SmartContract {
     public confirmBountyPayment(
         repoOwnerSig: Sig,
         repoOwnerPubKey: PubKey,
-        approverSigs: FixedArray<Sig, typeof BountyEscrow.N_APPROVERS>
+        approverSigs: FixedArray<Sig, typeof BountyContract.N_APPROVERS>
     ) {
         // Validate repo owner signature
         assert(
@@ -105,7 +105,7 @@ export class BountyContract extends SmartContract {
     public rejectBounty(
         repoOwnerSig: Sig,
         repoOwnerPubKey: PubKey,
-        approverSigs: FixedArray<Sig, typeof BountyEscrow.N_APPROVERS>
+        approverSigs: FixedArray<Sig, typeof BountyContract.N_APPROVERS>
     ) {
         // Validate repo owner signature
         assert(
@@ -176,7 +176,7 @@ export class BountyContract extends SmartContract {
     public splitBountyPayment(
         repoOwnerSig: Sig,
         repoOwnerPubKey: PubKey,
-        approverSigs: FixedArray<Sig, typeof BountyEscrow.N_APPROVERS>,
+        approverSigs: FixedArray<Sig, typeof BountyContract.N_APPROVERS>,
         // Array of contributor addresses and their percentage
         contributorShares: FixedArray<[Addr, bigint], 5> // Max 5 contributors
     ) {
