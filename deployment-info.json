@@ -40,6 +40,12 @@
       "name": "production",
       "description": "Cloud deployment configuration",
       "publicUrl": "https://bounty-app.bsv.dev"
+    },
+    {
+      "name": "Local LARS",
+      "network": "mainnet",
+      "provider": "LARS",
+      "run": []
     }
   ]
 }

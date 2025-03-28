@@ -1,9 +1,17 @@
 import { AdmittanceInstructions, TopicManager } from '@bsv/overlay'
 import { Transaction, ProtoWallet, Utils } from '@bsv/sdk'
-import docs from './BountyTopicDocs.md.js'
-import bountyContractJson from '../../artifacts/Bounty.json' with { type: 'json' }
+import { SmartContract } from 'scrypt-ts'
+// Comment this if docs file doesn't exist
+// import docs from './BountyTopicDocs.md.js'
+// Define a placeholder for docs if the file doesn't exist
+const docs = 'Bounty Topic Manager documentation. Tracks GitHub issue bounties on the BSV blockchain.';
+
+// Use require instead of import for JSON files
+const bountyContractJson = require('../../artifacts/Bounty.json');
 import { BountyContract } from '../contracts/BountyContract.js'
-BountyContract.loadArtifact(bountyContractJson)
+
+// Load the artifact
+SmartContract.loadArtifact(bountyContractJson)
 
 // Create a wallet for verification purposes
 const anyoneWallet = new ProtoWallet('anyone')
@@ -58,8 +66,9 @@ export default class BountyTopicManager implements TopicManager {
           outputsToAdmit.push(i)
           console.log(`Admitted bounty output at index ${i}`)
         } catch (error) {
-          // This output is not a valid bounty contract, skip it
-          console.debug(`Output ${i} is not a bounty contract: ${error.message}`)
+          // Fix for error message with type casting
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.debug(`Output ${i} is not a bounty contract: ${errorMessage}`)
           continue
         }
       }
@@ -68,9 +77,11 @@ export default class BountyTopicManager implements TopicManager {
         console.warn('No bounty outputs admitted in transaction')
       }
     } catch (error) {
+      // Fix for error message with type casting
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const beefStr = JSON.stringify(beef.slice(0, 100), null, 2) + '...' // Trim for logging
       throw new Error(
-        `BountyTopicManager: Error identifying admissible outputs: ${error.message} beef: ${beefStr}`
+        `BountyTopicManager: Error identifying admissible outputs: ${errorMessage} beef: ${beefStr}`
       )
     }
 
@@ -85,7 +96,7 @@ export default class BountyTopicManager implements TopicManager {
    * @returns A promise that resolves to a string containing the documentation
    */
   async getDocumentation(): Promise<string> {
-    return docs
+    return docs;
   }
 
   /**

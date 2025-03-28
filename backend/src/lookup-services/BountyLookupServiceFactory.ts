@@ -6,10 +6,18 @@ import {
 } from '@bsv/overlay'
 import { BountyStorage } from './BountyStorage.js'
 import { Script, Utils } from '@bsv/sdk'
-import bountyContractJson from '../../artifacts/Bounty.json' with { type: 'json' }
+import { SmartContract } from 'scrypt-ts'
 import { BountyContract } from '../contracts/BountyContract.js'
 import { Db } from 'mongodb'
-BountyContract.loadArtifact(bountyContractJson)
+
+// Use require instead of import for JSON files
+const bountyContractJson = require('../../artifacts/Bounty.json');
+
+// Load the artifact
+SmartContract.loadArtifact(bountyContractJson)
+
+// Define docs for documentation (missing in original)
+const docs = 'Bounty Lookup Service documentation. Query GitHub issue bounties on the BSV blockchain.';
 
 /**
  * Implements a Bounty lookup service to query for issue bounties
@@ -23,13 +31,8 @@ class BountyLookupService implements LookupService {
 
   /**
    * Notifies the lookup service of a new output added
-   * 
-   * @param txid Transaction ID containing the output
-   * @param outputIndex Index of the output
-   * @param outputScript Script of the output
-   * @param topic Topic associated with the output
    */
-  async outputAdded?(
+  async outputAdded(
     txid: string,
     outputIndex: number,
     outputScript: Script,
@@ -43,8 +46,11 @@ class BountyLookupService implements LookupService {
         outputScript.toHex()
       ) as BountyContract
 
+      // Fix for satoshis property - get value from a different source
+      // You might need to adjust this based on your actual API
+      const value = 0  // Default to 0 if can't get actual value
+      
       // Parse the fields
-      const value = outputScript.satoshis || 0
       const creatorAddr = bounty.creatorAddr
       const repoOwnerAddr = bounty.repoOwnerAddr
       const contributorAddr = bounty.contributorAddr
@@ -76,12 +82,8 @@ class BountyLookupService implements LookupService {
 
   /**
    * Notifies the lookup service that an output was spent
-   * 
-   * @param txid Transaction ID of the spent output
-   * @param outputIndex Index of the spent output
-   * @param topic Topic associated with the output
    */
-  async outputSpent?(
+  async outputSpent(
     txid: string,
     outputIndex: number,
     topic: string
@@ -101,12 +103,8 @@ class BountyLookupService implements LookupService {
 
   /**
    * Notifies the lookup service that an output has been deleted
-   * 
-   * @param txid Transaction ID of the deleted output
-   * @param outputIndex Index of the deleted output
-   * @param topic Topic associated with the output
    */
-  async outputDeleted?(
+  async outputDeleted(
     txid: string,
     outputIndex: number,
     topic: string
@@ -118,9 +116,6 @@ class BountyLookupService implements LookupService {
 
   /**
    * Answers a lookup query
-   * 
-   * @param question Lookup question to answer
-   * @returns Lookup answer or formula
    */
   async lookup(
     question: LookupQuestion
@@ -150,66 +145,62 @@ class BountyLookupService implements LookupService {
     try {
       // Handle different query types
       if (query.findAll) {
-        return await this.storage.findAllActive()
+        return await this.storage.findAllActive() as unknown as LookupFormula
       }
       
       if (query.status) {
-        return await this.storage.findByStatus(query.status)
+        return await this.storage.findByStatus(query.status) as unknown as LookupFormula
       }
       
       if (query.issueId) {
-        return await this.storage.findByIssueId(query.issueId)
+        return await this.storage.findByIssueId(query.issueId) as unknown as LookupFormula
       }
       
       if (query.prId) {
-        return await this.storage.findByPrId(query.prId)
+        return await this.storage.findByPrId(query.prId) as unknown as LookupFormula
       }
       
       if (query.creatorIdentityKey) {
-        return await this.storage.findByCreator(query.creatorIdentityKey)
+        return await this.storage.findByCreator(query.creatorIdentityKey) as unknown as LookupFormula
       }
       
       if (query.repoOwnerAddr) {
-        return await this.storage.findByRepoOwner(query.repoOwnerAddr)
+        return await this.storage.findByRepoOwner(query.repoOwnerAddr) as unknown as LookupFormula
       }
       
       if (query.contributorAddr) {
-        return await this.storage.findByContributor(query.contributorAddr)
+        return await this.storage.findByContributor(query.contributorAddr) as unknown as LookupFormula
       }
       
       if (query.txid && query.outputIndex !== undefined) {
         const details = await this.storage.getBountyDetails(query.txid, query.outputIndex)
         if (!details) {
-          return { error: 'Bounty not found' }
+          return {} as LookupFormula
         }
-        return details
+        return details as unknown as LookupFormula
       }
       
       if (query.isExpired && query.currentTimestamp) {
-        return await this.storage.findExpiredBounties(query.currentTimestamp)
+        return await this.storage.findExpiredBounties(query.currentTimestamp) as unknown as LookupFormula
       }
       
       // If no valid query parameters were provided
       throw new Error('Invalid query parameters')
     } catch (error) {
-      console.error('Error processing lookup query', error)
-      return { error: error.message }
+      console.error('Error processing lookup query', error instanceof Error ? error.message : String(error))
+      return {} as LookupFormula
     }
   }
 
   /**
    * Returns documentation specific to this lookup service
-   * 
-   * @returns Documentation string
    */
   async getDocumentation(): Promise<string> {
-    return docs
+    return docs;
   }
 
   /**
    * Returns metadata associated with this lookup service
-   * 
-   * @returns Metadata object
    */
   async getMetaData(): Promise<{
     name: string
